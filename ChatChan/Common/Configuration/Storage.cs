@@ -8,6 +8,8 @@
 
         public uint Port { get; set; }
 
+        public string DbName { get; set; }
+
         public string Uid { get; set; }
 
         public string Password { get; set; }

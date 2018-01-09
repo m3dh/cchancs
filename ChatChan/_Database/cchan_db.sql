@@ -36,6 +36,7 @@ CREATE TABLE IF NOT EXISTS `account_tokens` (
 CREATE TABLE IF NOT EXISTS `_images` (
     `Id`         INT         NOT NULL AUTO_INCREMENT,
     `Uuid`       VARCHAR(36) NOT NULL,
+    `Type`       VARCHAR(10) NOT NULL,
     `Data`       MEDIUMBLOB  NOT NULL,
     `CreatedAt`  DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (`Id`),

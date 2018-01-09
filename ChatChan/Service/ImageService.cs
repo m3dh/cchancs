@@ -1,29 +1,60 @@
 ﻿namespace ChatChan.Service
 {
     using System;
-    using System.IO;
+    using System.Collections.Generic;
+    using System.Linq;
     using System.Threading.Tasks;
 
-    using ChatChan.Provider;
+    using ChatChan.Common;
+    using ChatChan.Common.Configuration;
+    using ChatChan.Provider.Executor;
+    using ChatChan.Provider.StoreModel;
+    using Microsoft.Extensions.Logging;
+    using Microsoft.Extensions.Options;
 
-    public class ImageService
+    public interface IImageService
     {
-        private readonly MySqlProvider dbProvider;
+        Task<Guid> CreateCoreImage(string type, byte[] imageData);
+        Task<CoreImage> GetCoreImage(Guid imageGuid);
+    }
 
-        public ImageService(MySqlProvider dbProvider)
+    public class ImageService : IImageService
+    {
+        private readonly MySqlExecutor sqlExecutor;
+        private readonly ILogger logger;
+
+        public ImageService(ILoggerFactory loggerFactory, IOptions<StorageSection> storageSection)
         {
-            this.dbProvider = dbProvider;
+            this.logger = loggerFactory.CreateLogger<ImageService>();
+            this.sqlExecutor = new MySqlExecutor(storageSection?.Value?.CoreDatabase ?? throw new ArgumentNullException(nameof(storageSection)));
         }
 
-        public async Task<string> CreateImage(MemoryStream stream)
+        public async Task<Guid> CreateCoreImage(string type, byte[] imageData)
         {
-            if(stream == null)
+            Guid imageGuid = Guid.NewGuid();
+            (int affect, long id) = await this.sqlExecutor.Execute(Queries.ImageCreation, new Dictionary<string, object>
             {
-                throw new ArgumentNullException(nameof(stream));
+                { "@uuid", imageGuid.ToString("N") },
+                { "@data", imageData },
+                { "@type", type },
+            });
+
+            this.logger.LogDebug($"New image created with 'affect' = {affect}, 'id' = {id}");
+            return imageGuid;
+        }
+
+        public async Task<CoreImage> GetCoreImage(Guid imageGuid)
+        {
+            CoreImage image = 
+                (await this.sqlExecutor.QueryAll<CoreImage>(Queries.ImageQueryByUuid, new Dictionary<string, object> { { "@uuid", imageGuid.ToString("N") } }))
+                .SingleOrDefault();
+
+            if (image == null || image.Data == null)
+            {
+                throw new NotFoundException($"Image with UUID {imageGuid} is not found");
             }
 
-            byte[] bytes = stream.ToArray();
-            return await this.dbProvider.Execute<string>("");
+            return image;
         }
     }
 }
