@@ -1,18 +1,29 @@
 ﻿namespace ChatChan
 {
+    using System.Threading.Tasks;
+    using ChatChan.BackendJob;
     using Microsoft.AspNetCore;
-    using Microsoft.AspNetCore.Builder;
     using Microsoft.AspNetCore.Hosting;
 
     public class Program
     {
-        public static void Main(string[] args)
+        public static async Task Main(string[] args)
         {
-            IWebHost webHost = WebHost.CreateDefaultBuilder(args)
-                .UseUrls("http://*:8080").UseStartup<Startup>()
-                .Build();
+            using (IWebHost webHost =
+                WebHost.CreateDefaultBuilder(args)
+                    .UseUrls("http://*:8080")
+                    .UseStartup<Startup>()
+                    .Build())
+            {
+                // Backend jobs shall be initialized prior to starting the service.
+                await JobHost.Instance.Initialize();
 
-            webHost.Run();
+                // Start the Kestrel server for the chan service.
+                await webHost.StartAsync();
+
+                // Host the backend processor thread.
+                await JobHost.Instance.Run();
+            }
         }
     }
 }

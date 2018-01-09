@@ -26,7 +26,9 @@
         public ImageService(ILoggerFactory loggerFactory, IOptions<StorageSection> storageSection)
         {
             this.logger = loggerFactory.CreateLogger<ImageService>();
-            this.sqlExecutor = new MySqlExecutor(storageSection?.Value?.CoreDatabase ?? throw new ArgumentNullException(nameof(storageSection)));
+            this.sqlExecutor = new MySqlExecutor(
+                storageSection?.Value?.CoreDatabase ?? throw new ArgumentNullException(nameof(storageSection)),
+                loggerFactory);
         }
 
         public async Task<Guid> CreateCoreImage(string type, byte[] imageData)
@@ -36,7 +38,7 @@
             {
                 { "@uuid", imageGuid.ToString("N") },
                 { "@data", imageData },
-                { "@type", type },
+                { "@type", type }
             });
 
             this.logger.LogDebug($"New image created with 'affect' = {affect}, 'id' = {id}");

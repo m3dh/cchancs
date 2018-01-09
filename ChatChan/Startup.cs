@@ -1,8 +1,8 @@
 ﻿namespace ChatChan
 {
+    using ChatChan.BackendJob;
     using ChatChan.Common.Configuration;
     using ChatChan.Middleware;
-    using ChatChan.Provider;
     using ChatChan.Service;
     using Microsoft.AspNetCore.Builder;
     using Microsoft.AspNetCore.Hosting;
@@ -44,12 +44,12 @@
             IConfiguration configuration,
             IOptions<StorageSection> storageSection)
         {
-            if (env.IsDevelopment())
-            {
-                app.UseDeveloperExceptionPage();
-            }
+            // Configure backend job processor.
+            JobHost.CreateSingleInstance();
 
+            // Configure request pipeline.
             GeneralMiddleware middleware = new GeneralMiddleware(loggerFactory);
+
             middleware.Hook(app).UseMvc();
         }
     }
