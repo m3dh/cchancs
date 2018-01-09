@@ -32,7 +32,7 @@
                 .AddSingleton<IImageService, ImageService>()
 
                 // Framework
-                .AddMvc()
+                .AddMvc(options => { options.Filters.Add<GeneralHttpGlobalFilter>(); })
                 .AddJsonOptions(options => { options.SerializerSettings.NullValueHandling = NullValueHandling.Ignore; });
         }
 
@@ -48,9 +48,9 @@
             JobHost.CreateSingleInstance();
 
             // Configure request pipeline.
-            GeneralMiddleware middleware = new GeneralMiddleware(loggerFactory);
+           // GeneralMiddleware middleware = new GeneralMiddleware(loggerFactory);
 
-            middleware.Hook(app).UseMvc();
+           // middleware.Hook(app).UseMvc();
         }
     }
 }
