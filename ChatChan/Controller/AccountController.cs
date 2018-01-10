@@ -4,6 +4,7 @@
     using System.Collections.Generic;
     using System.Linq;
     using System.Threading.Tasks;
+    using ChatChan.Common;
     using ChatChan.Common.Configuration;
     using Microsoft.AspNetCore.Mvc;
     using Microsoft.Extensions.Configuration;
@@ -30,6 +31,7 @@
         [HttpPost]
         public void Post([FromBody]string value)
         {
+            throw new ClientInputException(value);
         }
 
         // PUT api/values/5

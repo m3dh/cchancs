@@ -47,6 +47,7 @@
 
         public async Task<CoreImage> GetCoreImage(Guid imageGuid)
         {
+            this.logger.LogInformation("UUID >>> {0}", imageGuid.ToString("N"));
             CoreImage image = 
                 (await this.sqlExecutor.QueryAll<CoreImage>(Queries.ImageQueryByUuid, new Dictionary<string, object> { { "@uuid", imageGuid.ToString("N") } }))
                 .SingleOrDefault();

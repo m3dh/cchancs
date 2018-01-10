@@ -4,6 +4,7 @@
     using System.Collections.Generic;
     using System.Data;
     using System.Data.Common;
+    using System.Linq;
     using System.Threading.Tasks;
     using ChatChan.Common.Configuration;
     using Microsoft.Extensions.Logging;
@@ -18,13 +19,21 @@
     {
         public static TOut ReadColumn<TOut>(this IDataReader record, string column, Func<int, TOut> reader)
         {
-            int ordinalNumber = record.GetOrdinal(column);
-            return reader(ordinalNumber);
+            try
+            {
+                int ordinalNumber = record.GetOrdinal(column);
+                return reader(ordinalNumber);
+            }
+            catch (IndexOutOfRangeException)
+            {
+                return default;
+            }
         }
     }
 
     public class MySqlExecutor
     {
+        private static readonly string[] SupportedSqlModes = new[] { "MySQL-AutoCommit" };
         private readonly string connectionString;
         private readonly ILogger logger;
 
@@ -35,6 +44,11 @@
 
         public MySqlExecutor(string mode, string serverHost, uint port, string userId, string password, string dbName, ILoggerFactory loggerFactory)
         {
+            if (SupportedSqlModes.All(m => !string.Equals(m, mode, StringComparison.OrdinalIgnoreCase)))
+            {
+                throw new ArgumentException($"Unexpected SQL mode {mode}", nameof(mode));
+            }
+
             MySqlConnectionStringBuilder connectionStringBuilder = new MySqlConnectionStringBuilder
             {
                 Server = serverHost,

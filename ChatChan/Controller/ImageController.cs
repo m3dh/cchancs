@@ -10,7 +10,6 @@
     using ChatChan.Service;
     using Microsoft.AspNetCore.Mvc;
 
-    [Route("api/images")]
     public class ImageController : Controller
     {
         private static readonly string[] AcceptableImageContentTypes = new[] { "image/jpeg" };
@@ -21,7 +20,7 @@
             this.imageService = imageService ?? throw new ArgumentNullException(nameof(imageService));
         }
 
-        [HttpPost, Route("avatars")]
+        [HttpPost, Route("api/images/avatars")]
         public async Task<Dictionary<string,string>> CreateAvatarImage()
         {
             if (null == this.Request.Body)
@@ -55,7 +54,7 @@
             return new Dictionary<string, string> { { "uuid", avatarImageId.ToString("N") } };
         }
 
-        [HttpGet("{uuid:guid}"), Route("avatars")]
+        [HttpGet, Route("api/images/avatars/{uuid:guid}")]
         public async Task<ActionResult> GetAvatarImage(Guid uuid)
         {
             CoreImage image = await this.imageService.GetCoreImage(uuid);

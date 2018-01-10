@@ -44,13 +44,23 @@
             IConfiguration configuration,
             IOptions<StorageSection> storageSection)
         {
+            ILogger<Startup> logger = loggerFactory.CreateLogger<Startup>();
+            if (env.IsDevelopment())
+            {
+                logger.LogInformation("Running host process for development");
+            }
+            else if (env.IsProduction())
+            {
+                logger.LogInformation("Running host process for production");
+            }
+
+            logger.LogInformation("Storage mode : {0}", storageSection.Value?.DeployMode ?? "<empty>");
+
             // Configure backend job processor.
             JobHost.CreateSingleInstance();
 
             // Configure request pipeline.
-           // GeneralMiddleware middleware = new GeneralMiddleware(loggerFactory);
-
-           // middleware.Hook(app).UseMvc();
+            app.UseMvc();
         }
     }
 }

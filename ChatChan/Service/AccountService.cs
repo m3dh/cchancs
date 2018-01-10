@@ -5,7 +5,7 @@
     public class AccountService
     {
         [Flags]
-        private enum AccountStatus : int
+        private enum UserAccountStatus : int
         {
             CanUpdateFields = 0x00000001,
             CanUpdatePassword = 0x00000002,
