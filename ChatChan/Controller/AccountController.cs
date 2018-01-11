@@ -1,49 +1,130 @@
 ﻿namespace ChatChan.Controller
 {
     using System;
-    using System.Collections.Generic;
-    using System.Linq;
     using System.Threading.Tasks;
-    using ChatChan.Common;
-    using ChatChan.Common.Configuration;
-    using Microsoft.AspNetCore.Mvc;
-    using Microsoft.Extensions.Configuration;
-    using Microsoft.Extensions.Options;
 
-    [Route("api/accounts")]
+    using ChatChan.Common;
+    using ChatChan.Service;
+    using ChatChan.Service.Identifier;
+    using ChatChan.Service.Model;
+
+    using Microsoft.AspNetCore.Mvc;
+    using Newtonsoft.Json;
+
+    public class UserAccountViewModel
+    {
+        [JsonProperty(PropertyName = "account_id")]
+        public string Id { get; set; }
+
+        [JsonProperty(PropertyName = "display_name")]
+        public string DisplayName { get; set; }
+
+        [JsonProperty(PropertyName = "avatar_image_id")]
+        public string AvatarImageId { get; set; }
+
+        [JsonProperty(PropertyName = "created_at")]
+        public DateTimeOffset CreatedAt { get; set; }
+
+        [JsonProperty(PropertyName = "avatar_url")]
+        public Uri AvatarUri { get; set; }
+
+        public static UserAccountViewModel FromStoreModel(UserAccount account)
+        {
+            return new UserAccountViewModel
+            {
+                Id = account.AccountId.ToString(),
+                DisplayName = account.DisplayName,
+                AvatarImageId = account.Avatar?.ToString(),
+                AvatarUri = account.Avatar == null ? null : ImageController.GetImageUri(account.Avatar),
+                CreatedAt = account.CreatedAt,
+            };
+        }
+    }
+
+    public class UserAccountInputModel
+    {
+        [JsonProperty(PropertyName = "account_name")]
+        public string AccountName { get; set; }
+
+        [JsonProperty(PropertyName = "display_name")]
+        public string DisplayName { get; set; }
+
+        [JsonProperty(PropertyName = "avatar_image_id")]
+        public string AvatarImageId { get; set; }
+
+        [JsonProperty(PropertyName = "password")]
+        public Uri Password { get; set; }
+    }
+
     public class AccountController : Controller
     {
-        // GET api/values
-        [HttpGet]
-        public IEnumerable<string> Get()
+        private readonly IAccountService accountService;
+
+        public AccountController(IAccountService accountService)
         {
-            return new string[] { "value1", "value2" };
+            this.accountService = accountService ?? throw new ArgumentNullException(nameof(accountService));
         }
 
-        // GET api/values/5
-        [HttpGet("{id}")]
-        public string Get(int id)
+        [HttpPost, Route("api/accounts/users")]
+        public async Task<UserAccountViewModel> CreateUserAccount([FromBody] UserAccountInputModel inputAccount)
         {
-            return "value";
+            if (inputAccount == null)
+            {
+                throw new BadRequest(nameof(inputAccount));
+            }
+
+            if (string.IsNullOrEmpty(inputAccount.AccountName))
+            {
+                throw new BadRequest(nameof(inputAccount.AccountName));
+            }
+
+            if (string.IsNullOrEmpty(inputAccount.DisplayName))
+            {
+                throw new BadRequest(nameof(inputAccount.DisplayName));
+            }
+
+            AccountId accountId = await this.accountService.CreateUserAccount(inputAccount.AccountName, inputAccount.DisplayName);
+            UserAccount account = await this.accountService.GetUserAccount(accountId);
+            return UserAccountViewModel.FromStoreModel(account);
         }
 
-        // POST api/values
-        [HttpPost]
-        public void Post([FromBody]string value)
+        [HttpGet, Route("api/accounts/users/{accountId}")]
+        public async Task<UserAccountViewModel> GetUserAccount(string accountId)
         {
-            throw new ClientInputException(value);
+            if (string.IsNullOrEmpty(accountId))
+            {
+                throw new BadRequest(nameof(accountId));
+            }
+
+            if  (!AccountId.TryParse(accountId, out AccountId accountIdObj))
+            {
+                accountIdObj = new AccountId { Name = accountId, Type = AccountId.AccountType.UA };
+            }
+
+            UserAccount account = await this.accountService.GetUserAccount(accountIdObj);
+            return UserAccountViewModel.FromStoreModel(account);
         }
 
-        // PUT api/values/5
-        [HttpPut("{id}")]
-        public void Put(int id, [FromBody]string value)
+        [HttpPatch, Route("api/accounts/users/{accountId}")]
+        public async Task<UserAccountViewModel> UpdateUserAccount(string accountId, [FromBody] UserAccountInputModel inputAccount)
         {
-        }
+            if (string.IsNullOrEmpty(accountId))
+            {
+                throw new BadRequest(nameof(accountId));
+            }
 
-        // DELETE api/values/5
-        [HttpDelete("{id}")]
-        public void Delete(int id)
-        {
+            if (!AccountId.TryParse(accountId, out AccountId accountIdObj))
+            {
+                accountIdObj = new AccountId { Name = accountId, Type = AccountId.AccountType.UA };
+            }
+
+            if (inputAccount == null)
+            {
+                throw new BadRequest(nameof(inputAccount));
+            }
+
+            UserAccount account = await this.accountService.UpdateUserAccount(accountIdObj, inputAccount.DisplayName, inputAccount.AvatarImageId);
+            return UserAccountViewModel.FromStoreModel(account);
         }
     }
 }

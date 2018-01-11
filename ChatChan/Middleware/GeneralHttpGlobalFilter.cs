@@ -4,7 +4,9 @@
     using System.Globalization;
     using System.Net;
     using System.Threading.Tasks;
+
     using ChatChan.Common;
+
     using Microsoft.AspNetCore.Http;
     using Microsoft.AspNetCore.Mvc;
     using Microsoft.AspNetCore.Mvc.Filters;
@@ -53,24 +55,52 @@
         public void OnException(ExceptionContext context)
         {
             context.HttpContext.Response.Clear();
+            ErrorResponse response = new ErrorResponse
+            {
+                TrackId = context.HttpContext.TraceIdentifier,
+            };
 
-            ErrorResponse response = new ErrorResponse { TrackId = context.HttpContext.TraceIdentifier };
-            if (context.Exception is ClientInputException)
+            if (context.Exception is BadRequest)
             {
                 context.HttpContext.Response.StatusCode = (int)HttpStatusCode.BadRequest;
-                response.ErrorCode = context.HttpContext.Response.StatusCode;
+                response.ErrorMessage = context.Exception.Message;
+            }
+            else if (context.Exception is NotAllowed)
+            {
+                context.HttpContext.Response.StatusCode = (int)HttpStatusCode.MethodNotAllowed;
+                response.ErrorMessage = context.Exception.Message;
+            }
+            else if (context.Exception is NotFound)
+            {
+                context.HttpContext.Response.StatusCode = (int)HttpStatusCode.NotFound;
+                response.ErrorMessage = context.Exception.Message;
+            }
+            else if (context.Exception is Conflict)
+            {
+                context.HttpContext.Response.StatusCode = (int)HttpStatusCode.Conflict;
+                response.ErrorMessage = context.Exception.Message;
+                response.ErrorCode = (int)((Conflict)context.Exception).ErrorCode;
+            }
+            else if (context.Exception is ServiceUnavailable)
+            {
+                context.HttpContext.Response.StatusCode = (int)HttpStatusCode.ServiceUnavailable;
+                response.ErrorMessage = context.Exception.Message;
+            }
+            else if (context.Exception is NotModified)
+            {
+                context.HttpContext.Response.StatusCode = (int)HttpStatusCode.NotModified;
                 response.ErrorMessage = context.Exception.Message;
             }
             else
             {
                 context.HttpContext.Response.StatusCode = 500;
-                response.ErrorCode = context.HttpContext.Response.StatusCode;
                 response.ErrorMessage = "Internal server error";
 
-                this.logger.LogDebug("Unhandled exception : {0} : {1}", context.Exception.GetType().Name, context.Exception);
+                // Whenever a unhandled runtime exception happened in the web threads, we log it down as a warning for troubleshooting...
+                this.logger.LogWarning("Unhandled exception : {0} : {1}", context.Exception.GetType().Name, context.Exception);
             }
 
-            this.logger.LogDebug("Error : {0}", response.ErrorMessage);
+            response.ErrorCode = context.HttpContext.Response.StatusCode;
             context.Result = new JsonResult(response);
         }
     }

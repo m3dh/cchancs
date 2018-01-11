@@ -6,8 +6,11 @@
     using System.Data.Common;
     using System.Linq;
     using System.Threading.Tasks;
+    using ChatChan.Common;
     using ChatChan.Common.Configuration;
+
     using Microsoft.Extensions.Logging;
+
     using MySql.Data.MySqlClient;
 
     public interface ISqlRecord
@@ -22,7 +25,7 @@
             try
             {
                 int ordinalNumber = record.GetOrdinal(column);
-                return reader(ordinalNumber);
+                return record.IsDBNull(ordinalNumber) ? default : reader(ordinalNumber);
             }
             catch (IndexOutOfRangeException)
             {
@@ -31,7 +34,7 @@
         }
     }
 
-    public class MySqlExecutor
+    public class MySqlExecutor : IDisposable
     {
         private static readonly string[] SupportedSqlModes = new[] { "MySQL-AutoCommit" };
         private readonly string connectionString;
@@ -55,7 +58,8 @@
                 Port = port,
                 UserID = userId,
                 Password = password,
-                Database = dbName
+                Database = dbName,
+                CharacterSet = "utf8mb4",
             };
 
             this.logger = loggerFactory.CreateLogger<MySqlExecutor>();
@@ -103,6 +107,61 @@
                     int affected = await cmd.ExecuteNonQueryAsync();
                     long lastId = affected == 1 ? cmd.LastInsertedId : -1;
                     return Tuple.Create(affected, lastId);
+                }
+                catch (MySqlException ex)
+                {
+                    TryHandleMySqlException(ex);
+                    throw;
+                }
+                catch (Exception ex)
+                {
+                    this.logger.LogInformation("MySQL command failed : Q {0}, Msg {1}", query, ex.Message);
+                    throw;
+                }
+                finally
+                {
+                    await conn.CloseAsync();
+                }
+            }
+        }
+
+        public async Task<T> QueryScalar<T>(string query, Dictionary<string, object> parameters = null)
+        {
+            if (string.IsNullOrEmpty(query))
+            {
+                throw new ArgumentNullException(nameof(query));
+            }
+
+            using (MySqlConnection conn = await this.GetNewConnection())
+            using (MySqlCommand cmd = conn.CreateCommand())
+            {
+                cmd.CommandText = query;
+                if (parameters != null)
+                {
+                    foreach (KeyValuePair<string, object> parameter in parameters)
+                    {
+                        cmd.Parameters.AddWithValue(parameter.Key, parameter.Value);
+                    }
+                }
+
+                try
+                {
+                    object result = await cmd.ExecuteScalarAsync();
+                    Type targetType = typeof(T);
+                    Type sourceType = result.GetType();
+                    if (targetType == sourceType || targetType.IsAssignableFrom(sourceType))
+                    {
+                        return (T)result;
+                    }
+                    else
+                    {
+                        return (T)Convert.ChangeType(result, targetType);
+                    }
+                }
+                catch (MySqlException ex)
+                {
+                    TryHandleMySqlException(ex);
+                    throw;
                 }
                 catch (Exception ex)
                 {
@@ -155,6 +214,11 @@
                         // We do assume that all data in the SQL db could be dumped, so just close the reader here...
                     }
                 }
+                catch (MySqlException ex)
+                {
+                    TryHandleMySqlException(ex);
+                    throw;
+                }
                 catch (Exception ex)
                 {
                     this.logger.LogInformation("MySQL command failed : Q {0}, Msg {1}", query, ex.Message);
@@ -165,6 +229,24 @@
                     await conn.CloseAsync();
                 }
             }
+        }
+
+        // Some user errors could only be caught here, and got converted to user caused exception types.
+        private static void TryHandleMySqlException(MySqlException ex)
+        {
+            switch (ex.Number)
+            {
+                case 1062:
+                    throw new Conflict(Conflict.Code.Duplication, "The data modification violates some unique key constraints");
+
+                default:
+                    return;
+            }
+        }
+
+        public void Dispose()
+        {
+            MySqlConnection.ClearAllPools();
         }
     }
 }

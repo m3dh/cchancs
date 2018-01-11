@@ -6,7 +6,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Folder Include="Controller\ViewModel\" />
     <Folder Include="wwwroot\" />
   </ItemGroup>
 

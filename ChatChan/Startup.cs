@@ -3,18 +3,22 @@
     using ChatChan.BackendJob;
     using ChatChan.Common.Configuration;
     using ChatChan.Middleware;
+    using ChatChan.Provider;
     using ChatChan.Service;
+
     using Microsoft.AspNetCore.Builder;
     using Microsoft.AspNetCore.Hosting;
     using Microsoft.Extensions.Configuration;
     using Microsoft.Extensions.DependencyInjection;
     using Microsoft.Extensions.Logging;
     using Microsoft.Extensions.Options;
+
     using Newtonsoft.Json;
 
     public class Startup
     {
         private IConfiguration Configuration { get; }
+        private IServiceCollection serviceCollection;
 
         public Startup(IConfiguration configuration)
         {
@@ -24,12 +28,15 @@
 
         public void ConfigureServices(IServiceCollection services)
         {
+            this.serviceCollection = services;
             services
                 // Configurations (appsettings.json)
                 .Configure<StorageSection>(this.Configuration.GetSection("Storage"))
 
                 // Providers
+                .AddSingleton<CoreDbProvider>()
                 .AddSingleton<IImageService, ImageService>()
+                .AddSingleton<IAccountService, AccountService>()
 
                 // Framework
                 .AddMvc(options => { options.Filters.Add<GeneralHttpGlobalFilter>(); })
