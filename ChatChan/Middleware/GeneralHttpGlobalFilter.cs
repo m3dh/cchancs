@@ -32,14 +32,14 @@
         public async Task OnActionExecutionAsync(ActionExecutingContext context, ActionExecutionDelegate next)
         {
             // Performance tracker : Start
-            DateTime startDateTime = DateTime.Now;
+            DateTime startDateTime = DateTime.UtcNow;
 
             await next();
 
-            TimeSpan elapsed = DateTime.Now - startDateTime;
+            TimeSpan elapsed = DateTime.UtcNow - startDateTime;
 
             // Performance tracker : Write header
-            context.HttpContext.Response.Headers.Add("X-Response-Time",
+            context.HttpContext.Response.Headers.Add("X-Cchan-ServerTime",
                 new[] { elapsed.TotalMilliseconds.ToString("F1", CultureInfo.InvariantCulture) });
 
             this.logger.LogInformation("Request to {0} finished in {1}ms", context.HttpContext.Request.Path, elapsed.TotalMilliseconds.ToString("F1"));
@@ -75,11 +75,11 @@
                 context.HttpContext.Response.StatusCode = (int)HttpStatusCode.NotFound;
                 response.ErrorMessage = context.Exception.Message;
             }
-            else if (context.Exception is Conflict)
+            else if (context.Exception is Conflict conflict)
             {
                 context.HttpContext.Response.StatusCode = (int)HttpStatusCode.Conflict;
                 response.ErrorMessage = context.Exception.Message;
-                response.ErrorCode = (int)((Conflict)context.Exception).ErrorCode;
+                response.ErrorCode = (int)conflict.ErrorCode;
             }
             else if (context.Exception is ServiceUnavailable)
             {
@@ -89,6 +89,11 @@
             else if (context.Exception is NotModified)
             {
                 context.HttpContext.Response.StatusCode = (int)HttpStatusCode.NotModified;
+                response.ErrorMessage = context.Exception.Message;
+            }
+            else if (context.Exception is Forbidden)
+            {
+                context.HttpContext.Response.StatusCode = (int)HttpStatusCode.Forbidden;
                 response.ErrorMessage = context.Exception.Message;
             }
             else

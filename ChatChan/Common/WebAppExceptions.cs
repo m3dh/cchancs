@@ -12,6 +12,8 @@
         {
         }
 
+        public BadRequest(string message, object data) : base($"Bad request : {message} ({data})") { }
+
         public BadRequest(Exception ex) : base("Exception happened while parsing the request.", ex)
         {
         }
@@ -56,6 +58,20 @@
     public class NotModified : Exception
     {
         public NotModified(string message) : base(message)
+        {
+        }
+    }
+
+    public class Unauthorized : Exception
+    {
+        public Unauthorized(string message) : base(message)
+        {
+        }
+    }
+
+    public class Forbidden : Exception
+    {
+        public Forbidden(string message) : base(message)
         {
         }
     }

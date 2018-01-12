@@ -6,11 +6,13 @@
     using System.Threading.Tasks;
 
     using ChatChan.Common;
+    using ChatChan.Middleware;
     using ChatChan.Service;
     using ChatChan.Service.Identifier;
     using ChatChan.Service.Model;
 
     using Microsoft.AspNetCore.Mvc;
+
     using Newtonsoft.Json;
 
     public class ImageViewModel
@@ -39,6 +41,7 @@
         }
 
         [HttpPost, Route("api/images/avatars")]
+        [ServiceFilter(typeof(TokenAuthActionFilter))]
         public async Task<ImageViewModel> CreateAvatarImage()
         {
             if (null == this.Request.Body)
@@ -78,6 +81,7 @@
         }
 
         [HttpGet, Route("api/images/{imageId}")]
+        [ServiceFilter(typeof(TokenAuthActionFilter))]
         public async Task<ImageViewModel> GetImageMetadata(string imageId)
         {
             if (string.IsNullOrEmpty(imageId))
@@ -101,6 +105,7 @@
         }
 
         [HttpGet, Route("api/images/core/{imageId}")]
+        [ServiceFilter(typeof(TokenAuthActionFilter))]
         public async Task<ActionResult> GetCoreImageData(string imageId)
         {
             if (string.IsNullOrEmpty(imageId))

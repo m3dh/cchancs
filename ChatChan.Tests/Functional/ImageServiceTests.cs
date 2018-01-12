@@ -28,6 +28,7 @@ namespace ChatChan.Tests.Functional
 
                 ByteArrayContent content = new ByteArrayContent(image);
                 content.Headers.ContentType = MediaTypeHeaderValue.Parse("image/jpeg");
+                ChatAppAuthProvider.Instace.AuthIt(content.Headers); // Auth request
                 HttpResponseMessage resp = client.PostAsync("http://localhost:8080/api/images/avatars", content).Result;
                 Assert.Equal(HttpStatusCode.Created, resp.StatusCode);
                 Dictionary<string, object> result = JsonConvert.DeserializeObject<Dictionary<string, object>>(resp.Content.ReadAsStringAsync().Result);
@@ -35,15 +36,19 @@ namespace ChatChan.Tests.Functional
                 Assert.StartsWith("CI:", id);
 
                 // Get the image metadata
-                resp = client.GetAsync($"http://localhost:8080/api/images/{id}").Result;
+                HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Get, $"http://localhost:8080/api/images/{id}");
+                ChatAppAuthProvider.Instace.AuthIt(request.Headers); // Auth request
+                resp = client.SendAsync(request).Result;
 
                 Assert.Equal(HttpStatusCode.OK, resp.StatusCode);
                 ImageViewModel respObj = JsonConvert.DeserializeObject<ImageViewModel>(resp.Content.ReadAsStringAsync().Result);
-                Assert.Equal("jpeg",respObj.ContentType);
+                Assert.Equal("jpeg", respObj.ContentType);
                 Assert.Equal(id, respObj.Id);
 
                 // Get the image content...
-                resp = client.GetAsync($"http://localhost:8080/api/images/core/{id}").Result;
+                HttpRequestMessage request1 = new HttpRequestMessage(HttpMethod.Get, $"http://localhost:8080/api/images/core/{id}");
+                ChatAppAuthProvider.Instace.AuthIt(request1.Headers); // Auth request
+                resp = client.SendAsync(request1).Result;
 
                 Assert.Equal(HttpStatusCode.OK, resp.StatusCode);
                 Assert.Equal(image.Length, resp.Content.Headers.ContentLength);

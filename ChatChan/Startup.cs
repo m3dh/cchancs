@@ -32,11 +32,18 @@
             services
                 // Configurations (appsettings.json)
                 .Configure<StorageSection>(this.Configuration.GetSection("Storage"))
+                .Configure<LimitationsSection>(this.Configuration.GetSection("Limitations"))
 
                 // Providers
                 .AddSingleton<CoreDbProvider>()
+
+                // Filters
+                .AddTransient<TokenAuthActionFilter>()
+
+                // Entity services
                 .AddSingleton<IImageService, ImageService>()
                 .AddSingleton<IAccountService, AccountService>()
+                .AddSingleton<ITokenService, TokenService>()
 
                 // Framework
                 .AddMvc(options => { options.Filters.Add<GeneralHttpGlobalFilter>(); })

@@ -4,11 +4,13 @@
     using System.Threading.Tasks;
 
     using ChatChan.Common;
+    using ChatChan.Middleware;
     using ChatChan.Service;
     using ChatChan.Service.Identifier;
     using ChatChan.Service.Model;
 
     using Microsoft.AspNetCore.Mvc;
+    using Microsoft.AspNetCore.Mvc.Filters;
     using Newtonsoft.Json;
 
     public class UserAccountViewModel
@@ -41,6 +43,18 @@
         }
     }
 
+    public class DeviceTokenViewModel
+    {
+        [JsonProperty("token")]
+        public string Token { get; set; }
+
+        [JsonProperty("device_id")]
+        public int DeviceId { get; set; }
+
+        [JsonProperty("expire")]
+        public DateTimeOffset ExpireAt { get; set; }
+    }
+
     public class UserAccountInputModel
     {
         [JsonProperty(PropertyName = "account_name")]
@@ -53,7 +67,7 @@
         public string AvatarImageId { get; set; }
 
         [JsonProperty(PropertyName = "password")]
-        public Uri Password { get; set; }
+        public string Password { get; set; }
     }
 
     public class AccountController : Controller
@@ -88,7 +102,60 @@
             return UserAccountViewModel.FromStoreModel(account);
         }
 
+        [HttpPost, Route("api/accounts/users/{accountId}/password")]
+        public async Task<UserAccountViewModel> CreateUserAccountPassword(string accountId, [FromBody] UserAccountInputModel inputAccount)
+        {
+            if (string.IsNullOrEmpty(accountId))
+            {
+                throw new BadRequest(nameof(accountId));
+            }
+
+            if (inputAccount == null)
+            {
+                throw new BadRequest(nameof(inputAccount));
+            }
+
+            if (!AccountId.TryParse(accountId, out AccountId accountIdObj))
+            {
+                accountIdObj = new AccountId { Name = accountId, Type = AccountId.AccountType.UA };
+            }
+
+            UserAccount account = await this.accountService.UpdateUserAccount(accountIdObj, inputAccount.Password);
+            return UserAccountViewModel.FromStoreModel(account);
+        }
+
+        [HttpPost, Route("api/accounts/users/{accountId}/tokens")]
+        public async Task<DeviceTokenViewModel> CreateUserAccountDeviceToken(
+            string accountId,
+            [FromQuery(Name = "device_id")] int? deviceId,
+            [FromBody] UserAccountInputModel inputAccount)
+        {
+            if (string.IsNullOrEmpty(accountId))
+            {
+                throw new BadRequest(nameof(accountId));
+            }
+
+            if (inputAccount == null)
+            {
+                throw new BadRequest(nameof(inputAccount));
+            }
+
+            if (!AccountId.TryParse(accountId, out AccountId accountIdObj))
+            {
+                accountIdObj = new AccountId { Name = accountId, Type = AccountId.AccountType.UA };
+            }
+
+            UserClientToken token = await this.accountService.LogonUserAccount(accountIdObj, inputAccount.Password, deviceId);
+            return new DeviceTokenViewModel
+            {
+                DeviceId = token.DeviceId,
+                ExpireAt = token.ExpiredAt,
+                Token = token.Token,
+            };
+        }
+
         [HttpGet, Route("api/accounts/users/{accountId}")]
+        [ServiceFilter(typeof(TokenAuthActionFilter))]
         public async Task<UserAccountViewModel> GetUserAccount(string accountId)
         {
             if (string.IsNullOrEmpty(accountId))
@@ -106,6 +173,7 @@
         }
 
         [HttpPatch, Route("api/accounts/users/{accountId}")]
+        [ServiceFilter(typeof(TokenAuthActionFilter))]
         public async Task<UserAccountViewModel> UpdateUserAccount(string accountId, [FromBody] UserAccountInputModel inputAccount)
         {
             if (string.IsNullOrEmpty(accountId))
@@ -121,6 +189,14 @@
             if (inputAccount == null)
             {
                 throw new BadRequest(nameof(inputAccount));
+            }
+
+            if (!string.Equals(
+                accountIdObj.ToString(),
+                this.HttpContext.Items[Constants.HttpContextRealUserNameKey].ToString(),
+                StringComparison.OrdinalIgnoreCase))
+            {
+                throw new Forbidden("Updating another account is not allowed.");
             }
 
             UserAccount account = await this.accountService.UpdateUserAccount(accountIdObj, inputAccount.DisplayName, inputAccount.AvatarImageId);

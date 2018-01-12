@@ -98,7 +98,14 @@
                 {
                     foreach (KeyValuePair<string, object> parameter in parameters)
                     {
-                        cmd.Parameters.AddWithValue(parameter.Key, parameter.Value);
+                        if (parameter.Value is DateTimeOffset offset)
+                        {
+                            cmd.Parameters.AddWithValue(parameter.Key, offset.DateTime);
+                        }
+                        else
+                        {
+                            cmd.Parameters.AddWithValue(parameter.Key, parameter.Value);
+                        }
                     }
                 }
 
@@ -140,7 +147,14 @@
                 {
                     foreach (KeyValuePair<string, object> parameter in parameters)
                     {
-                        cmd.Parameters.AddWithValue(parameter.Key, parameter.Value);
+                        if (parameter.Value is DateTimeOffset offset)
+                        {
+                            cmd.Parameters.AddWithValue(parameter.Key, offset.DateTime);
+                        }
+                        else
+                        {
+                            cmd.Parameters.AddWithValue(parameter.Key, parameter.Value);
+                        }
                     }
                 }
 
@@ -191,7 +205,14 @@
                 {
                     foreach (KeyValuePair<string, object> parameter in parameters)
                     {
-                        cmd.Parameters.AddWithValue(parameter.Key, parameter.Value);
+                        if (parameter.Value is DateTimeOffset offset)
+                        {
+                            cmd.Parameters.AddWithValue(parameter.Key, offset.DateTime);
+                        }
+                        else
+                        {
+                            cmd.Parameters.AddWithValue(parameter.Key, parameter.Value);
+                        }
                     }
                 }
 
