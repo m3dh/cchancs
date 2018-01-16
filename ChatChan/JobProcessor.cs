@@ -42,12 +42,7 @@
                 lb.AddDebug();
             });
 
-            services.AddTransient<SendMessageProcessor>();
-            services.AddTransient<IList<IJobProcessor>>(p =>
-                new IJobProcessor[]
-                {
-                    p.GetRequiredService<SendMessageProcessor>()
-                });
+            services.AddTransient<SendChatMessageProcessor>();
 
             services.AddSingleton<JobHost>();
         }

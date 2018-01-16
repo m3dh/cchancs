@@ -1,8 +1,14 @@
 ﻿namespace ChatChan.Service.Identifier
 {
     using System;
+    using System.Globalization;
 
-    public class AccountId
+    public interface IPartitionedIdentifier
+    {
+        int Partition { get; }
+    }
+
+    public class AccountId : IPartitionedIdentifier
     {
         public enum AccountType : uint
         {
@@ -10,6 +16,8 @@
         }
 
         public AccountType Type { get; set; }
+
+        public int Partition { get; set; }
 
         public string Name { get; set; }
 
@@ -22,7 +30,7 @@
 
             accountId = null;
             string[] inputSplits = input.Split(':');
-            if (2 != inputSplits.Length)
+            if (3 != inputSplits.Length)
             {
                 return false;
             }
@@ -32,7 +40,12 @@
                 return false;
             }
 
-            if (string.IsNullOrEmpty(inputSplits[1]))
+            if (!int.TryParse(inputSplits[1], NumberStyles.HexNumber, null, out int partition))
+            {
+                return false;
+            }
+
+            if (string.IsNullOrEmpty(inputSplits[2]))
             {
                 return false;
             }
@@ -40,7 +53,8 @@
             accountId = new AccountId
             {
                 Type = type,
-                Name = inputSplits[1],
+                Partition = partition,
+                Name = inputSplits[2],
             };
 
             return true;
@@ -48,7 +62,7 @@
 
         public override string ToString()
         {
-            return $"{this.Type.ToString()}:{this.Name}";
+            return $"{this.Type.ToString()}:{this.Partition:X2}:{this.Name}";
         }
     }
 

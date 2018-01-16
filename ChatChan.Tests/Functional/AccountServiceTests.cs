@@ -123,7 +123,7 @@
                 req = new HttpRequestMessage(new HttpMethod("PATCH"), $"http://localhost:8080/api/accounts/users/{accountName}");
                 req.Content = new StringContent(JsonConvert.SerializeObject(request));
                 req.Content.Headers.ContentType = new MediaTypeHeaderValue("application/json") { CharSet = "utf-8" };
-                (new ChatAppAuthProvider($"UA:{accountName}", token0.DeviceId, token0.Token)).AuthIt(req.Content.Headers);
+                (new ChatAppAuthProvider($"UA:00:{accountName}", token0.DeviceId, token0.Token)).AuthIt(req.Content.Headers);
                 resp = client.SendAsync(req).Result;
                 Assert.Equal(HttpStatusCode.OK, resp.StatusCode);
 
@@ -132,7 +132,7 @@
                 resp = client.SendAsync(reqMsg).Result;
                 var response = JsonConvert.DeserializeObject<UserAccountViewModel>(resp.Content.ReadAsStringAsync().Result);
                 Assert.Equal(HttpStatusCode.OK, resp.StatusCode);
-                Assert.Equal($"UA:{accountName}", response.Id);
+                Assert.Equal($"UA:00:{accountName}", response.Id);
                 Assert.Equal(request.DisplayName, response.DisplayName);
             }
         }
@@ -155,7 +155,7 @@
                 HttpResponseMessage resp = client.PostAsync("http://localhost:8080/api/accounts/users", content).Result;
                 Assert.Equal(HttpStatusCode.Created, resp.StatusCode);
                 UserAccountViewModel response = JsonConvert.DeserializeObject<UserAccountViewModel>(resp.Content.ReadAsStringAsync().Result);
-                Assert.Equal($"UA:{accountName}", response.Id);
+                Assert.Equal($"UA:00:{accountName}", response.Id);
                 Assert.Equal(request.DisplayName, response.DisplayName);
 
                 // Retreive the account back.
@@ -165,7 +165,7 @@
 
                 response = JsonConvert.DeserializeObject<UserAccountViewModel>(resp.Content.ReadAsStringAsync().Result);
                 Assert.Equal(HttpStatusCode.OK, resp.StatusCode);
-                Assert.Equal($"UA:{accountName}", response.Id);
+                Assert.Equal($"UA:00:{accountName}", response.Id);
                 Assert.Equal(request.DisplayName, response.DisplayName);
             }
 

@@ -96,6 +96,11 @@
                 context.HttpContext.Response.StatusCode = (int)HttpStatusCode.Forbidden;
                 response.ErrorMessage = context.Exception.Message;
             }
+            else if (context.Exception is Unauthorized)
+            {
+                context.HttpContext.Response.StatusCode = (int)HttpStatusCode.Unauthorized;
+                response.ErrorMessage = context.Exception.Message;
+            }
             else
             {
                 context.HttpContext.Response.StatusCode = 500;

@@ -67,6 +67,7 @@
                             { "@token", deviceToken.Token },
                             { "@last_get", deviceToken.LastGetAt },
                             { "@expire", deviceToken.ExpiredAt },
+                            { "@version", deviceToken.Version },
                             { "@id", deviceToken.Id }
                         });
 
@@ -105,6 +106,7 @@
                             { "@token", deviceToken.Token },
                             { "@last_get", deviceToken.LastGetAt },
                             { "@expire", deviceToken.ExpiredAt },
+                            { "@version", deviceToken.Version },
                             { "@id", deviceToken.Id }
                         });
 

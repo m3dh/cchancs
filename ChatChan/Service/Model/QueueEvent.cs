@@ -1,6 +1,11 @@
 ﻿namespace ChatChan.Service.Model
 {
-    public class SendMessageQueueEvent
+    public enum ChatAppQueueEventTypes
+    {
+        SendMessage = 0,
+    }
+
+    public class SendChatMessageEvent
     {
     }
 }

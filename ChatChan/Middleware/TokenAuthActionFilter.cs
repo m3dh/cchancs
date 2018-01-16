@@ -30,6 +30,7 @@
 
                 if (!AccountId.TryParse(accountHeader, out AccountId accountId))
                 {
+                    this.logger.LogDebug("Account ID header : {0}", accountHeader);
                     throw new Unauthorized("Account is not provided.");
                 }
 

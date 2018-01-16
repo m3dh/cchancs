@@ -23,6 +23,8 @@
 
         public int Version { get; set; }
 
+        public int Partition { get; set; }
+
         public abstract AccountId AccountId { get; }
 
         public virtual Task Fill(DbDataReader reader)
@@ -33,6 +35,7 @@
             this.CreatedAt = reader.ReadColumn(nameof(this.CreatedAt), reader.GetDateTime);
             this.UpdatedAt = reader.ReadColumn(nameof(this.UpdatedAt), reader.GetDateTime);
             this.Version = reader.ReadColumn(nameof(this.Version), reader.GetInt32);
+            this.Partition = reader.ReadColumn(nameof(this.Partition), reader.GetInt32);
 
             string avatarImageId = reader.ReadColumn(nameof(this.Avatar), reader.GetString);
             if (!string.IsNullOrEmpty(avatarImageId))
@@ -64,7 +67,8 @@
                 return new AccountId
                 {
                     Name = this.AccountName,
-                    Type = AccountId.AccountType.UA
+                    Type = AccountId.AccountType.UA,
+                    Partition = this.Partition,
                 };
             }
         }

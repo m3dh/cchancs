@@ -13,46 +13,46 @@
 
     using Microsoft.Extensions.Logging;
 
-    using Newtonsoft.Json;
-
-    public interface IQueueEvent<out TData> where TData : class, new()
+    public interface IQueueEvent
     {
+        int DataType { get; }
+        string DataJson { get; }
         bool Processed { get; }
-        TData Data { get; }
     }
 
-    public interface IMessageQueue<TData> where TData : class, new()
+    public interface IMessageQueue
     {
-        Task<IQueueEvent<TData>> Pop();
-        Task Dequeue(IQueueEvent<TData> queueEvent);
-        Task PushOne(TData eventData);
+        Task<IQueueEvent> Pop();
+        Task Dequeue(IQueueEvent queueEvent);
+        Task PushOne(int eventType, string eventData);
     }
 
-    public class CoreDbTableQueue<TData> : IMessageQueue<TData>
-        where TData : class, new()
+    public class CoreDbTableQueue : IMessageQueue
     {
         private readonly string queueTable;
         private readonly MySqlExecutor sqlExecutor;
         private readonly ILogger logger;
 
-        public class CoreDbQueueEvent : IQueueEvent<TData>, ISqlRecord
+        public class CoreDbQueueEvent : IQueueEvent, ISqlRecord
         {
             public long Id { get; private set; }
 
             public bool Processed { get; private set; }
 
-            public TData Data { get; private set; }
+            public string DataJson { get; private set; }
+
+            public int DataType { get; private set; }
 
             public int Version { get; private set; }
 
             public Task Fill(DbDataReader reader)
             {
                 // Id,IsProcessed,DataJson,Version
-                string dataJson = reader.ReadColumn("DataJson", reader.GetString);
+                this.DataJson = reader.ReadColumn(nameof(this.DataJson), reader.GetString);
+                this.DataType = reader.ReadColumn(nameof(this.DataType), reader.GetInt32);
                 this.Id = reader.ReadColumn(nameof(this.Id), reader.GetInt64);
                 this.Version = reader.ReadColumn(nameof(this.Version), reader.GetInt32);
                 this.Processed = reader.ReadColumn(nameof(this.Processed), reader.GetBoolean);
-                this.Data = JsonConvert.DeserializeObject<TData>(dataJson);
                 return Task.FromResult(0);
             }
         }
@@ -66,10 +66,10 @@
 
             this.queueTable = queueTable;
             this.sqlExecutor = sqlExecutor ?? throw new ArgumentNullException(nameof(sqlExecutor));
-            this.logger = loggerFactory.CreateLogger<CoreDbTableQueue<TData>>();
+            this.logger = loggerFactory.CreateLogger<CoreDbTableQueue>();
         }
 
-        public async Task<IQueueEvent<TData>> Pop()
+        public async Task<IQueueEvent> Pop()
         {
             for (int i = 0; i < Constants.MaxCoreQueueFetchRetries; i++)
             {
@@ -101,29 +101,48 @@
                 }
 
                 this.logger.LogDebug("Queue event {0} has been updated by another worker.", queueEvent.Id);
+                await Task.Yield();
             }
 
             return null;
         }
 
-        public Task Dequeue(IQueueEvent<TData> queueEvent)
+        public async Task Dequeue(IQueueEvent queueEvent)
         {
-            throw new NotImplementedException();
+            if (queueEvent is CoreDbQueueEvent dbEvent)
+            {
+                (int affected, long _) = await this.sqlExecutor.Execute(
+                    string.Format(CoreQueueQueries.QueueDeleteEvent, this.queueTable),
+                    new Dictionary<string, object>
+                    {
+                        { "@id", dbEvent.Id },
+                        { "@version", dbEvent.Version }
+                    });
+
+                if (affected < 1)
+                {
+                    throw new DataException($"Unable to delete queue event {dbEvent.Id}");
+                }
+            }
+            else
+            {
+                throw new ArgumentException($"Unexpected event type {queueEvent.GetType().Name}");
+            }
         }
 
-        public async Task PushOne(TData eventData)
+        public async Task PushOne(int eventType, string eventData)
         {
-            if (eventData == null)
+            if (string.IsNullOrEmpty(eventData))
             {
                 throw new ArgumentNullException(nameof(eventData));
             }
 
-            string dataJson = JsonConvert.SerializeObject(eventData);
             (int _, long lastId) = await this.sqlExecutor.Execute(
                 string.Format(CoreQueueQueries.QueueNewEvent, this.queueTable),
                 new Dictionary<string, object>
                 {
-                    { "@dataJson", dataJson },
+                    { "@dataJson", eventData },
+                    { "@dataType", eventType }
                 });
 
             this.logger.LogDebug("New queue event inserted with ID '{0}'", lastId);

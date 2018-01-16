@@ -12,7 +12,7 @@
         public static readonly string TokenHeaderName = "X-Cchan-Token";
 
         public static readonly string StorageDeployModeAllInOne = "AllInOne";
-        public static readonly string MessageCoreDbTableName = "_chat_queue";
+        public static readonly string ChatAppDbMessageQueueTableName = "_chat_queue";
 
     }
 }

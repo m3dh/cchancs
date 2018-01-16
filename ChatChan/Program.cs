@@ -1,13 +1,13 @@
 ﻿namespace ChatChan
 {
     using System.Threading.Tasks;
-    using ChatChan.BackendJob;
+
     using ChatChan.Common.Configuration;
-    using ChatChan.Middleware;
     using ChatChan.Provider;
+    using ChatChan.Provider.Partition;
     using ChatChan.Provider.Queue;
     using ChatChan.Service;
-    using ChatChan.Service.Model;
+
     using Microsoft.AspNetCore;
     using Microsoft.AspNetCore.Hosting;
     using Microsoft.Extensions.Configuration;
@@ -39,7 +39,8 @@
 
                 // Providers
                 .AddSingleton<CoreDbProvider>()
-                .AddSingleton<IMessageQueue<SendMessageQueueEvent>, SendChatMessageQueueProvider>()
+                .AddSingleton<IDataPartitionProvider, DataPartitionsManager>()
+                .AddSingleton<IMessageQueue, MessageQueueProvider>()
 
                 // Entity services
                 .AddSingleton<IImageService, ImageService>()

@@ -7,7 +7,6 @@
     using ChatChan.Common.Configuration;
     using ChatChan.Provider.Executor;
     using ChatChan.Provider.Queue;
-    using ChatChan.Service.Model;
 
     using Microsoft.Extensions.Logging;
     using Microsoft.Extensions.Options;
@@ -20,11 +19,11 @@
         }
     }
 
-    public class SendChatMessageQueueProvider : IMessageQueue<SendMessageQueueEvent>
+    public class MessageQueueProvider : IMessageQueue
     {
-        private readonly IMessageQueue<SendMessageQueueEvent> innerQueue;
+        private readonly IMessageQueue innerQueue;
 
-        public SendChatMessageQueueProvider(CoreDbProvider coreDb, ILoggerFactory loggerFactory, IOptions<StorageSection> storageSection)
+        public MessageQueueProvider(CoreDbProvider coreDb, ILoggerFactory loggerFactory, IOptions<StorageSection> storageSection)
         {
             if (storageSection?.Value == null)
             {
@@ -34,7 +33,7 @@
             if (string.Equals(Constants.StorageDeployModeAllInOne, storageSection.Value.DeployMode, StringComparison.OrdinalIgnoreCase))
             {
                 // use core DB for all in 1 mode.
-                this.innerQueue = new CoreDbTableQueue<SendMessageQueueEvent>(Constants.MessageCoreDbTableName, coreDb, loggerFactory);
+                this.innerQueue = new CoreDbTableQueue(Constants.ChatAppDbMessageQueueTableName, coreDb, loggerFactory);
             }
             else
             {
@@ -42,19 +41,19 @@
             }
         }
 
-        public Task<IQueueEvent<SendMessageQueueEvent>> Pop()
+        public Task<IQueueEvent> Pop()
         {
             return this.innerQueue.Pop();
         }
 
-        public Task Dequeue(IQueueEvent<SendMessageQueueEvent> queueEvent)
+        public Task Dequeue(IQueueEvent queueEvent)
         {
             return this.innerQueue.Dequeue(queueEvent);
         }
 
-        public Task PushOne(SendMessageQueueEvent eventData)
+        public Task PushOne(int eventType, string eventData)
         {
-            return this.innerQueue.PushOne(eventData);
+            return this.innerQueue.PushOne(eventType, eventData);
         }
     }
 

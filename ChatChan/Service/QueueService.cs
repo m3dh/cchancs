@@ -3,30 +3,24 @@
     using System;
     using System.Threading.Tasks;
     using ChatChan.Provider.Queue;
-    using ChatChan.Service.Model;
 
     public interface IQueueService
     {
-        Task PushSendMessage(SendMessageQueueEvent sendMessage);
+        Task SendChatMessage();
     }
 
     public class QueueService : IQueueService
     {
-        private readonly IMessageQueue<SendMessageQueueEvent> sendMessageQueue;
+        private readonly IMessageQueue messageQueue;
 
-        public QueueService(IMessageQueue<SendMessageQueueEvent> sendMessageQueue)
+        public QueueService(IMessageQueue messageQueue)
         {
-            this.sendMessageQueue = sendMessageQueue ?? throw new ArgumentNullException(nameof(sendMessageQueue));
+            this.messageQueue = messageQueue ?? throw new ArgumentNullException(nameof(messageQueue));
         }
 
-        public Task PushSendMessage(SendMessageQueueEvent sendMessage)
+        public Task SendChatMessage()
         {
-            if (sendMessage == null)
-            {
-                throw new ArgumentNullException(nameof(sendMessage));
-            }
-
-            return this.sendMessageQueue.PushOne(sendMessage);
+            return this.messageQueue.PushOne(0, "");
         }
     }
 }

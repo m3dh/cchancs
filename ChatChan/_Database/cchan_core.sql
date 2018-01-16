@@ -12,9 +12,10 @@ CREATE TABLE IF NOT EXISTS `accounts` (
     `DisplayName` VARCHAR(100) NOT NULL,
     `Status`      BIGINT       NOT NULL DEFAULT 0,
     `Avatar`      VARCHAR(45)  NULL,
+    `Partition`   INT          NOT NULL,
     `CreatedAt`   DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
     `UpdatedAt`   DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-	`IsDeleted`   TINYINT      NOT NULL DEFAULT 0,
+    `IsDeleted`   TINYINT      NOT NULL DEFAULT 0,
     `Version`     INT          NOT NULL DEFAULT 0,
     PRIMARY KEY (`Id`),
     CONSTRAINT `UIX_AccountName` UNIQUE INDEX (`AccountName`)
@@ -29,7 +30,7 @@ CREATE TABLE IF NOT EXISTS `account_tokens` (
     `ExpiredAt`   DATETIME    NOT NULL,
     `CreatedAt`   DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP,
     `UpdatedAt`   DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-	`IsDeleted`   TINYINT     NOT NULL DEFAULT 0,
+    `IsDeleted`   TINYINT     NOT NULL DEFAULT 0,
     `Version`     INT         NOT NULL DEFAULT 0,
     PRIMARY KEY (`Id`),
     CONSTRAINT `UIX_AccountName_DeviceId` UNIQUE INDEX (`AccountName`, `DeviceId`)
@@ -41,16 +42,17 @@ CREATE TABLE IF NOT EXISTS `_images` (
     `Type`       VARCHAR(10) NOT NULL,
     `Data`       MEDIUMBLOB  NOT NULL,
     `CreatedAt`  DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP,
-	`IsDeleted`  TINYINT     NOT NULL DEFAULT 0,
+    `IsDeleted`  TINYINT     NOT NULL DEFAULT 0,
     PRIMARY KEY (`Id`),
     CONSTRAINT `UIX_ImageUuid` UNIQUE INDEX (`Uuid`)
 ) ENGINE = InnoDb DEFAULT CHARSET=UTF8MB4 AUTO_INCREMENT=1;
 
 CREATE TABLE IF NOT EXISTS `_chat_queue` (
-	`Id`          BIGINT     NOT NULL AUTO_INCREMENT,
-	`IsProcessed` TINYINT    NOT NULL DEFAULT 0,
-	`DataJson`    TEXT       NOT NULL,        
-	`Version`     INT        NOT NULL DEFAULT 0, -- workflow select version = 0 or updated_at > 1 min ago. (So just update @Version = @Version + 1 to reserve the message 30s for you).
-	`UpdatedAt`   DATETIME   NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-	PRIMARY KEY (`Id`)
+    `Id`          BIGINT     NOT NULL AUTO_INCREMENT,
+    `IsProcessed` TINYINT    NOT NULL DEFAULT 0,
+    `DataType`    INT        NOT NULL,
+    `DataJson`    TEXT       NOT NULL,
+    `Version`     INT        NOT NULL DEFAULT 0, -- workflow select version = 0 or updated_at > 1 min ago. (So just update @Version = @Version + 1 to reserve the message 30s for you).
+    `UpdatedAt`   DATETIME   NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (`Id`)
 ) ENGINE = InnoDb DEFAULT CHARSET=UTF8MB4 AUTO_INCREMENT=1;

@@ -81,7 +81,8 @@
                 {
                     { "@name", accountName },
                     { "@display_name", displayName },
-                    { "@status", UserAccountStatus.NewAccount },
+                    { "@partition", 0 }, // TODO : should fetch partitioner.
+                    { "@status", (long)UserAccountStatus.NewAccount },
                 });
 
             this.logger.LogDebug($"New user account created with 'affect' = {affect}, 'id' = {id}");

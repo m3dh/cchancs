@@ -1,32 +1,29 @@
 ﻿namespace ChatChan.BackendJob
 {
     using System;
-    using System.Collections.Generic;
     using System.Threading.Tasks;
 
     using Microsoft.Extensions.Logging;
 
-    public interface IJobProcessor
+    public interface IJobProcessor<in TMsg>
     {
-        Task<bool> ProcessOne();
+        Task Process(TMsg message);
     }
 
     public class JobHost
     {
-        private readonly IList<IJobProcessor> processors;
         private readonly ILogger logger;
 
-        public JobHost(ILoggerFactory loggerFactory, IList<IJobProcessor> processors)
+        public JobHost(ILoggerFactory loggerFactory)
         {
-            this.processors = processors ?? throw new ArgumentNullException(nameof(processors));
             this.logger = loggerFactory.CreateLogger<JobHost>() ?? throw new ArgumentNullException(nameof(loggerFactory));
         }
 
         public async Task Loop()
         {
+            this.logger.LogInformation("Job host started");
             while (true)
             {
-                this.logger.LogWarning("Starts");
                 await Task.Delay(5000);
             }
         }
