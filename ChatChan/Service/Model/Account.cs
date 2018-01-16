@@ -7,13 +7,9 @@
     using ChatChan.Provider.Executor;
     using ChatChan.Service.Identifier;
 
-    public class UserAccount : ISqlRecord
+    public abstract class BaseAccount : ISqlRecord
     {
         public int Id { get; set; }
-
-        public string AccountName { get; set; }
-
-        public string Password { get; set; }
 
         public string DisplayName { get; set; }
 
@@ -27,17 +23,12 @@
 
         public int Version { get; set; }
 
-        public AccountId AccountId
-        {
-            get { return new AccountId { Name = this.AccountName, Type = AccountId.AccountType.UA }; }
-        }
+        public abstract AccountId AccountId { get; }
 
-        public Task Fill(DbDataReader reader)
+        public virtual Task Fill(DbDataReader reader)
         {
             this.Id = reader.ReadColumn(nameof(this.Id), reader.GetInt32);
-            this.AccountName = reader.ReadColumn(nameof(this.AccountName), reader.GetString);
             this.DisplayName = reader.ReadColumn(nameof(this.DisplayName), reader.GetString);
-            this.Password = reader.ReadColumn(nameof(this.Password), reader.GetString);
             this.Status = reader.ReadColumn(nameof(this.Status), reader.GetInt64);
             this.CreatedAt = reader.ReadColumn(nameof(this.CreatedAt), reader.GetDateTime);
             this.UpdatedAt = reader.ReadColumn(nameof(this.UpdatedAt), reader.GetDateTime);
@@ -57,6 +48,33 @@
             }
 
             return Task.FromResult(0);
+        }
+    }
+
+    public class UserAccount : BaseAccount
+    {
+        public string AccountName { get; set; }
+
+        public string Password { get; set; }
+
+        public override AccountId AccountId
+        {
+            get
+            {
+                return new AccountId
+                {
+                    Name = this.AccountName,
+                    Type = AccountId.AccountType.UA
+                };
+            }
+        }
+
+        public override Task Fill(DbDataReader reader)
+        {
+            this.AccountName = reader.ReadColumn(nameof(this.AccountName), reader.GetString);
+            this.Password = reader.ReadColumn(nameof(this.Password), reader.GetString);
+
+            return base.Fill(reader);
         }
     }
 }
