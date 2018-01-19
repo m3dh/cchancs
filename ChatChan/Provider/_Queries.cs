@@ -58,4 +58,47 @@
         public const string TokenCreateNew = "INSERT INTO account_tokens(AccountName, DeviceId, Token, LastGetAt, ExpiredAt) " +
                                              "VALUES(@account_name,@device,@token,@last_get,@expire)";
     }
+
+    internal static class ChannelQueries
+    {
+        /*
+         *  `Id`           INT          NOT NULL AUTO_INCREMENT,
+            `Type`         INT          NOT NULL, -- 1 = 1:1 chat, 2 = In group chat, 3 = Someone to group chat.
+            `Partition`    INT          NOT NULL,
+            `DisplayName`  VARCHAR(100) NULL,
+            `MemberList`   TEXT         NOT NULL,
+            `MemberHash`   VARCHAR(45)  NOT NULL,
+            `OwnerActId`   VARCHAR(45)  NOT NULL, -- Owner's account ID, for type = 1 chats, this field is not used.
+            `CreatedAt`    DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            `UpdatedAt`    DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            `IsDeleted`    TINYINT      NOT NULL DEFAULT 0,
+            `Version`      INT          NOT NULL DEFAULT 0,
+         */
+        private const string ChannelSelectionSlim =
+            "SELECT `Id`,`Type`,`Partition`,`DisplayName`,`MemberHash`,`OwerActId`,`CreatedAt`,`UpdatedAt`,`IsDeleted`,`Version` FROM `channels` ";
+
+        public static readonly string ChannelQueryById = ChannelSelectionSlim + "WHERE `Id` = @id";
+
+        public static readonly string ChannelQueryMembersById = "SELECT `MemberList`,`Version` FROM `channels` WHERE `Id` = @id";
+    }
+
+    internal static class ParticipantQueries
+    {
+        /*
+         *      `Id`           INT          NOT NULL AUTO_INCREMENT,
+                `AccountId`    VARCHAR(45)  NOT NULL, -- This participant's account ID.
+                `ChannelId`    VARCHAR(45)  NOT NULL, -- The other side of this session.
+                `CreatedAt`    DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                `UpdatedAt`    DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                `IsDeleted`    TINYINT      NOT NULL DEFAULT 0,
+                `Version`      INT          NOT NULL DEFAULT 0,
+         */
+        private const string ParticipantSelection = "SELECT `Id`,`AccountId`,`ChannelId`,`CreatedAt`,`UpdatedAt`,`IsDeleted`,`Version` FROM `participants` ";
+
+        public static readonly string ParticipantQueryById = ParticipantSelection + "WHERE `Id` = @id";
+
+        public static readonly string ParticipantQueryByAccountId = ParticipantSelection + "WHERE `AccountId` = @accountId";
+
+        public static readonly string ParticipantCreate = "INSERT INTO `participants` (`AccountId`,`ChannelId`) VALUES (@accountId,@channelId)";
+    }
 }

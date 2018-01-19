@@ -26,5 +26,7 @@
         public int PartitionCount { get; set; }
 
         public MySqlDbSection CoreDatabase { get; set; }
+
+        public MySqlDbSection[] DataDatabases { get; set; }
     }
 }

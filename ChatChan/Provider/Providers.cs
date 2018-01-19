@@ -11,6 +11,12 @@
     using Microsoft.Extensions.Logging;
     using Microsoft.Extensions.Options;
 
+    public interface IDataPartitionProvider
+    {
+        MySqlExecutor GetDataExecutor(int partition);
+        int GetPartition();
+    }
+
     public class CoreDbProvider : MySqlExecutor
     {
         public CoreDbProvider(ILoggerFactory loggerFactory, IOptions<StorageSection> storageSection)

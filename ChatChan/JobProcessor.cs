@@ -1,11 +1,10 @@
 ﻿namespace ChatChan
 {
-    using System.Collections.Generic;
     using System.IO;
     using System.Threading.Tasks;
 
     using ChatChan.BackendJob;
-
+    using ChatChan.Service.Model;
     using Microsoft.Extensions.Configuration;
     using Microsoft.Extensions.DependencyInjection;
     using Microsoft.Extensions.Logging;
@@ -42,8 +41,7 @@
                 lb.AddDebug();
             });
 
-            services.AddTransient<SendChatMessageProcessor>();
-
+            services.AddTransient<IJobProcessor<SendChatMessageEvent>, SendChatMessageProcessor>();
             services.AddSingleton<JobHost>();
         }
 

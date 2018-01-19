@@ -68,7 +68,6 @@
                 {
                     Name = this.AccountName,
                     Type = AccountId.AccountType.UA,
-                    Partition = this.Partition,
                 };
             }
         }

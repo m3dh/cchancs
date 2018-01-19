@@ -34,6 +34,7 @@
         private readonly ILogger<ImageService> logger;
         private readonly CoreDbProvider coreDb;
         private readonly ITokenService tokenService;
+        private readonly IDataPartitionProvider partitionProvider;
         private readonly LimitationsSection serviceLimits;
 
         [Flags]
@@ -51,11 +52,13 @@
             ILoggerFactory loggerFactory,
             CoreDbProvider coreDb,
             ITokenService tokenService,
+            IDataPartitionProvider partitionProvider,
             IOptions<LimitationsSection> serviceLimits)
         {
             this.logger = loggerFactory.CreateLogger<ImageService>();
             this.coreDb = coreDb ?? throw new ArgumentNullException(nameof(coreDb));
             this.tokenService = tokenService ?? throw new ArgumentNullException(nameof(tokenService));
+            this.partitionProvider = partitionProvider ?? throw new ArgumentNullException(nameof(partitionProvider));
             this.serviceLimits = serviceLimits?.Value ?? throw new ArgumentNullException(nameof(serviceLimits));
         }
 
@@ -81,7 +84,7 @@
                 {
                     { "@name", accountName },
                     { "@display_name", displayName },
-                    { "@partition", 0 }, // TODO : should fetch partitioner.
+                    { "@partition", this.partitionProvider.GetPartition() },
                     { "@status", (long)UserAccountStatus.NewAccount },
                 });
 

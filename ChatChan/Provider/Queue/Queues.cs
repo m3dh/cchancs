@@ -10,12 +10,12 @@
     using ChatChan.Common;
     using ChatChan.Provider;
     using ChatChan.Provider.Executor;
-
+    using ChatChan.Service.Model;
     using Microsoft.Extensions.Logging;
 
     public interface IQueueEvent
     {
-        int DataType { get; }
+        ChatAppQueueEventTypes DataType { get; }
         string DataJson { get; }
         bool Processed { get; }
     }
@@ -41,15 +41,14 @@
 
             public string DataJson { get; private set; }
 
-            public int DataType { get; private set; }
+            public ChatAppQueueEventTypes DataType { get; private set; }
 
             public int Version { get; private set; }
 
             public Task Fill(DbDataReader reader)
             {
-                // Id,IsProcessed,DataJson,Version
                 this.DataJson = reader.ReadColumn(nameof(this.DataJson), reader.GetString);
-                this.DataType = reader.ReadColumn(nameof(this.DataType), reader.GetInt32);
+                this.DataType = (ChatAppQueueEventTypes)reader.ReadColumn(nameof(this.DataType), reader.GetInt32);
                 this.Id = reader.ReadColumn(nameof(this.Id), reader.GetInt64);
                 this.Version = reader.ReadColumn(nameof(this.Version), reader.GetInt32);
                 this.Processed = reader.ReadColumn(nameof(this.Processed), reader.GetBoolean);

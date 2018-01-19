@@ -1,24 +1,76 @@
 ﻿namespace ChatChan.Service.Identifier
 {
     using System;
-    using System.Globalization;
 
-    public interface IPartitionedIdentifier
+    using Newtonsoft.Json;
+
+    public class ChannelId
     {
-        int Partition { get; }
+        public enum ChannelType : uint
+        {
+            DM = 0, // Direct message, or one-on-one messages.
+            GP = 1, // Group messages
+        }
+
+        [JsonProperty(PropertyName = "t")]
+        public ChannelType Type { get; set; }
+
+        [JsonProperty(PropertyName = "id")]
+        public int Id { get; set; }
+
+        [JsonProperty(PropertyName = "p")]
+        public int Partition { get; set; }
+
+        public override string ToString()
+        {
+            return $"{this.Type.ToString()}:{this.Partition}:{this.Id}";
+        }
+
+        public static bool TryParse(string input, out ChannelId channelId)
+        {
+            if (input == null)
+            {
+                throw new ArgumentNullException(nameof(input));
+            }
+
+            channelId = null;
+            string[] inputSplits = input.Split(':');
+            if (3 != inputSplits.Length)
+            {
+                return false;
+            }
+
+            if (!Enum.TryParse(inputSplits[0], out ChannelType channelType))
+            {
+                return false;
+            }
+
+            if(!int.TryParse(inputSplits[1], out int partition))
+            {
+                return false;
+            }
+
+            if (!int.TryParse(inputSplits[2], out int id))
+            {
+                return false;
+            }
+
+            channelId = new ChannelId { Id = id, Type = channelType, Partition = partition };
+            return true;
+        }
     }
 
-    public class AccountId : IPartitionedIdentifier
+    public class AccountId
     {
         public enum AccountType : uint
         {
             UA = 0, // UserAccount
         }
 
+        [JsonProperty(PropertyName = "t")]
         public AccountType Type { get; set; }
 
-        public int Partition { get; set; }
-
+        [JsonProperty(PropertyName = "n")]
         public string Name { get; set; }
 
         public static bool TryParse(string input, out AccountId accountId)
@@ -30,7 +82,7 @@
 
             accountId = null;
             string[] inputSplits = input.Split(':');
-            if (3 != inputSplits.Length)
+            if (2 != inputSplits.Length)
             {
                 return false;
             }
@@ -40,12 +92,7 @@
                 return false;
             }
 
-            if (!int.TryParse(inputSplits[1], NumberStyles.HexNumber, null, out int partition))
-            {
-                return false;
-            }
-
-            if (string.IsNullOrEmpty(inputSplits[2]))
+            if (string.IsNullOrEmpty(inputSplits[1]))
             {
                 return false;
             }
@@ -53,8 +100,7 @@
             accountId = new AccountId
             {
                 Type = type,
-                Partition = partition,
-                Name = inputSplits[2],
+                Name = inputSplits[1],
             };
 
             return true;
@@ -62,7 +108,7 @@
 
         public override string ToString()
         {
-            return $"{this.Type.ToString()}:{this.Partition:X2}:{this.Name}";
+            return $"{this.Type.ToString()}:{this.Name}";
         }
     }
 
@@ -73,8 +119,10 @@
             CI = 0, // CoreImage
         }
 
+        [JsonProperty(PropertyName = "t")]
         public ImageType Type { get; set; }
 
+        [JsonProperty(PropertyName = "g")]
         public Guid Guid { get; set; }
 
         public static bool TryParse(string input, out ImageId imageId)
