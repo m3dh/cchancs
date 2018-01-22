@@ -9,7 +9,7 @@
         public enum ChannelType : uint
         {
             DM = 0, // Direct message, or one-on-one messages.
-            GP = 1, // Group messages
+            GR = 1, // Group messages
         }
 
         [JsonProperty(PropertyName = "t")]

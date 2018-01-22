@@ -21,6 +21,8 @@
     {
         Task<int> CountUserAccount();
 
+        Task<int> GetUserAccountPartition(AccountId accountId);
+
         Task<AccountId> CreateUserAccount(string accountName, string displayName);
         Task<UserAccount> GetUserAccount(AccountId accountId);
         Task<UserAccount> UpdateUserAccount(AccountId accountId, string password);
@@ -65,6 +67,12 @@
         public Task<int> CountUserAccount()
         {
             return this.coreDb.QueryScalar<int>(AccountQueries.UserAccountQueryCount);
+        }
+
+        public async Task<int> GetUserAccountPartition(AccountId accountId)
+        {
+            UserAccount account = await this.GetUserAccount(accountId);
+            return account.Partition;
         }
 
         public async Task<AccountId> CreateUserAccount(string accountName, string displayName)

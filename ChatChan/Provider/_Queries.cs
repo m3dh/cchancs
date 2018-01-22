@@ -84,21 +84,15 @@
 
     internal static class ParticipantQueries
     {
-        /*
-         *      `Id`           INT          NOT NULL AUTO_INCREMENT,
-                `AccountId`    VARCHAR(45)  NOT NULL, -- This participant's account ID.
-                `ChannelId`    VARCHAR(45)  NOT NULL, -- The other side of this session.
-                `CreatedAt`    DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                `UpdatedAt`    DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-                `IsDeleted`    TINYINT      NOT NULL DEFAULT 0,
-                `Version`      INT          NOT NULL DEFAULT 0,
-         */
         private const string ParticipantSelection = "SELECT `Id`,`AccountId`,`ChannelId`,`CreatedAt`,`UpdatedAt`,`IsDeleted`,`Version` FROM `participants` ";
 
-        public static readonly string ParticipantQueryById = ParticipantSelection + "WHERE `Id` = @id";
+        public static readonly string ParticipantQueryByIds = ParticipantSelection + "WHERE `AccountId` = @accountId AND `ChannelId` = @channelId";
 
         public static readonly string ParticipantQueryByAccountId = ParticipantSelection + "WHERE `AccountId` = @accountId";
 
         public static readonly string ParticipantCreate = "INSERT INTO `participants` (`AccountId`,`ChannelId`) VALUES (@accountId,@channelId)";
+
+        public static readonly string ParticipantUpdateSoftDelete =
+            "UPDATE `participants` SET `IsDeleted` = @deleted WHERE `AccountId` = @accountId AND `ChannelId` = @channelId";
     }
 }
