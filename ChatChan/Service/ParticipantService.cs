@@ -60,7 +60,7 @@
                     ParticipantQueries.ParticipantUpdateSoftDelete,
                     new Dictionary<string, object>
                     {
-                        { "@deleted", 1 },
+                        { "@deleted", 0 },
                         { "@accountId", accountId.ToString() },
                         { "@channelId", channelId.ToString() }
                     });

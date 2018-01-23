@@ -21,19 +21,22 @@
             this.partitionExecutors = new Lazy<MySqlExecutor>[this.storageSection.PartitionCount];
 
             Lazy<MySqlExecutor> coreDatabase = new Lazy<MySqlExecutor>(() => new MySqlExecutor(this.storageSection.CoreDatabase, loggerFactory));
-            foreach (int partition in this.storageSection.CoreDatabase.PartitionKeys)
+            if (this.storageSection.CoreDatabase.PartitionKeys != null)
             {
-                if (partition > this.storageSection.PartitionCount)
+                foreach (int partition in this.storageSection.CoreDatabase.PartitionKeys)
                 {
-                    throw new InvalidOperationException($"Invalid core partition {partition}");
-                }
+                    if (partition > this.storageSection.PartitionCount)
+                    {
+                        throw new InvalidOperationException($"Invalid core partition {partition}");
+                    }
 
-                if (null != this.partitionExecutors[partition - 1])
-                {
-                    throw new InvalidOperationException($"Duplicate core partition {partition}");
-                }
+                    if (null != this.partitionExecutors[partition - 1])
+                    {
+                        throw new InvalidOperationException($"Duplicate core partition {partition}");
+                    }
 
-                this.partitionExecutors[partition - 1] = coreDatabase;
+                    this.partitionExecutors[partition - 1] = coreDatabase;
+                }
             }
 
             if (this.storageSection.DataDatabases != null)

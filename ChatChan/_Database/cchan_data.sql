@@ -11,7 +11,7 @@ CREATE TABLE IF NOT EXISTS `participants` (
     `IsDeleted`    TINYINT      NOT NULL DEFAULT 0,
     `Version`      INT          NOT NULL DEFAULT 0,
     PRIMARY KEY (`Id`),
-    CONSTRAINT `UIX_AccountId_ChannelId` UNIQUE INDEX (`AccountName`, `ChannelId`)
+    CONSTRAINT `UIX_AccountId_ChannelId` UNIQUE INDEX (`AccountId`, `ChannelId`)
 ) ENGINE = InnoDb DEFAULT CHARSET=UTF8MB4 AUTO_INCREMENT=1;
 
 CREATE TABLE IF NOT EXISTS `channels` (

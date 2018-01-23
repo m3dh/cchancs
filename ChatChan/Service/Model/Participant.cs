@@ -36,7 +36,7 @@
             this.AccountId = accountIdObj;
 
             string channelId = reader.ReadColumn(nameof(this.ChannelId), reader.GetString);
-            if (!ChannelId.TryParse(accountId, out ChannelId channelIdObj))
+            if (!ChannelId.TryParse(channelId, out ChannelId channelIdObj))
             {
                 throw new DataException($"Unexpected data format for channel ID for {this.Id}");
             }

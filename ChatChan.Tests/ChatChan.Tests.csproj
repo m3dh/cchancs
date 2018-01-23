@@ -18,8 +18,4 @@
     <ProjectReference Include="..\ChatChan\ChatChan.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="UnitTest\" />
-  </ItemGroup>
-
 </Project>
