@@ -46,6 +46,8 @@
                 .AddSingleton<IImageService, ImageService>()
                 .AddSingleton<IAccountService, AccountService>()
                 .AddSingleton<ITokenService, TokenService>()
+                .AddSingleton<IChannelService, ChannelService>()
+                .AddSingleton<IParticipantService, ParticipantService>()
                 .AddSingleton<IQueueService, QueueService>();
 
             return serviceCollection;

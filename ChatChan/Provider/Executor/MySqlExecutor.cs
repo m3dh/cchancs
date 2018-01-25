@@ -12,6 +12,7 @@
     using Microsoft.Extensions.Logging;
 
     using MySql.Data.MySqlClient;
+    using MySql.Data.Types;
 
     public interface ISqlRecord
     {
@@ -20,6 +21,12 @@
 
     public static class SqlRecordHelper
     {
+        public static DateTimeOffset ReadDateColumn(this IDataReader record, string column)
+        {
+            DateTime datetime = record.ReadColumn(column, record.GetDateTime);
+            return DateTime.SpecifyKind(datetime, DateTimeKind.Utc);
+        }
+
         public static TOut ReadColumn<TOut>(this IDataReader record, string column, Func<int, TOut> reader)
         {
             try

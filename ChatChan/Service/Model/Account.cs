@@ -32,8 +32,8 @@
             this.Id = reader.ReadColumn(nameof(this.Id), reader.GetInt32);
             this.DisplayName = reader.ReadColumn(nameof(this.DisplayName), reader.GetString);
             this.Status = reader.ReadColumn(nameof(this.Status), reader.GetInt64);
-            this.CreatedAt = reader.ReadColumn(nameof(this.CreatedAt), reader.GetDateTime);
-            this.UpdatedAt = reader.ReadColumn(nameof(this.UpdatedAt), reader.GetDateTime);
+            this.CreatedAt = reader.ReadDateColumn(nameof(this.CreatedAt));
+            this.UpdatedAt = reader.ReadDateColumn(nameof(this.UpdatedAt));
             this.Version = reader.ReadColumn(nameof(this.Version), reader.GetInt32);
             this.Partition = reader.ReadColumn(nameof(this.Partition), reader.GetInt32);
 

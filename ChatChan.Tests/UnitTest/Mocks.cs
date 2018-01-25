@@ -1,12 +1,19 @@
 ﻿namespace ChatChan.Tests.UnitTest
 {
+    using System;
     using System.Collections.Generic;
+
     using ChatChan.Common.Configuration;
     using ChatChan.Provider;
     using ChatChan.Provider.Partition;
+    using ChatChan.Service;
+    using ChatChan.Service.Identifier;
+
     using Microsoft.Extensions.Logging;
     using Microsoft.Extensions.Logging.Console;
     using Microsoft.Extensions.Options;
+
+    using NSubstitute;
 
     public static class Mocks
     {
@@ -66,6 +73,17 @@
                     }
                 }
             });
+        }
+
+        public static AccountId CreateAccount()
+        {
+            ILoggerFactory loggerFactory = Mocks.GetLoggerFactory();
+            IOptions<StorageSection> storageSection = Mocks.GetStorageSection();
+            IOptions<LimitationsSection> limitationSection = Mocks.GetLimitationSection();
+            IDataPartitionProvider partitionProvider = new DataPartitionsManager(storageSection, loggerFactory);
+            CoreDbProvider coreDbProvider = new CoreDbProvider(loggerFactory, storageSection);
+            IAccountService accountService = new AccountService(loggerFactory, coreDbProvider, Substitute.For<ITokenService>(), partitionProvider, limitationSection);
+            return accountService.CreateUserAccount("Acct-" + Guid.NewGuid().ToString("N").Substring(19), "Account for participant service tests.").Result;
         }
     }
 }

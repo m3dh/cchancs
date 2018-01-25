@@ -15,7 +15,6 @@ CREATE TABLE IF NOT EXISTS `accounts` (
     `Partition`   INT          NOT NULL,
     `CreatedAt`   DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
     `UpdatedAt`   DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    `IsDeleted`   TINYINT      NOT NULL DEFAULT 0,
     `Version`     INT          NOT NULL DEFAULT 0,
     PRIMARY KEY (`Id`),
     CONSTRAINT `UIX_AccountName` UNIQUE INDEX (`AccountName`)
@@ -30,10 +29,26 @@ CREATE TABLE IF NOT EXISTS `account_tokens` (
     `ExpiredAt`   DATETIME    NOT NULL,
     `CreatedAt`   DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP,
     `UpdatedAt`   DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    `IsDeleted`   TINYINT     NOT NULL DEFAULT 0,
     `Version`     INT         NOT NULL DEFAULT 0,
     PRIMARY KEY (`Id`),
     CONSTRAINT `UIX_AccountName_DeviceId` UNIQUE INDEX (`AccountName`, `DeviceId`)
+) ENGINE = InnoDb DEFAULT CHARSET=UTF8MB4 AUTO_INCREMENT=1;
+
+CREATE TABLE IF NOT EXISTS `channels` (
+    `Id`           INT          NOT NULL AUTO_INCREMENT,
+    `Type`         INT          NOT NULL, -- 0 = 1:1 chat, 1 = In group chat, 2 = Someone to group chat.
+    `Partition`    INT          NOT NULL,
+    `DisplayName`  VARCHAR(100) NULL,
+    `Status`       BIGINT       NOT NULL DEFAULT 0,
+    `MemberList`   TEXT         NOT NULL,
+    `MemberHash`   VARCHAR(45)  NOT NULL,
+    `OwnerActId`   VARCHAR(45)  NOT NULL, -- Owner's account ID, for type = 1 chats, the owner is the account with a smaller account ID.
+    `CreatedAt`    DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    `UpdatedAt`    DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    `IsDeleted`    TINYINT      NOT NULL DEFAULT 0,
+    `Version`      INT          NOT NULL DEFAULT 0,
+    PRIMARY KEY (`Id`),
+    CONSTRAINT `UIX_Owner_Members` UNIQUE INDEX (`OwnerActId`, `MemberHash`)
 ) ENGINE = InnoDb DEFAULT CHARSET=UTF8MB4 AUTO_INCREMENT=1;
 
 CREATE TABLE IF NOT EXISTS `_images` (

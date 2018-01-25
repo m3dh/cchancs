@@ -28,8 +28,8 @@
             this.AccountName = reader.ReadColumn(nameof(this.AccountName), reader.GetString);
             this.DeviceId = reader.ReadColumn(nameof(this.DeviceId), reader.GetInt32);
             this.Token = reader.ReadColumn(nameof(this.Token), reader.GetString);
-            this.LastGetAt = reader.ReadColumn(nameof(this.LastGetAt), reader.GetDateTime);
-            this.ExpiredAt = reader.ReadColumn(nameof(this.ExpiredAt), reader.GetDateTime);
+            this.LastGetAt = reader.ReadDateColumn(nameof(this.LastGetAt));
+            this.ExpiredAt = reader.ReadDateColumn(nameof(this.ExpiredAt));
             this.Version = reader.ReadColumn(nameof(this.Version), reader.GetInt32);
 
             return Task.FromResult(0);

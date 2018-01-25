@@ -19,12 +19,11 @@
         public void CreateParticipantAndUnlinkAndRelink_ShallSucceed()
         {
             IParticipantService service = GetParticipantService();
-            AccountId account = CreateAccount();
+            AccountId account = Mocks.CreateAccount();
 
             ChannelId channel = new ChannelId
             {
                 Id = 1,
-                Partition = 1,
                 Type = ChannelId.ChannelType.GR
             };
 
@@ -48,17 +47,6 @@
             participant = service.ListAccountParticipants(account).Result.Single();
             Assert.Equal(account.Name, participant.AccountId.Name);
             Assert.Equal(channel.Id, participant.ChannelId.Id);
-        }
-
-        private static AccountId CreateAccount()
-        {
-            ILoggerFactory loggerFactory = Mocks.GetLoggerFactory();
-            IOptions<StorageSection> storageSection = Mocks.GetStorageSection();
-            IOptions<LimitationsSection> limitationSection = Mocks.GetLimitationSection();
-            IDataPartitionProvider partitionProvider = new DataPartitionsManager(storageSection, loggerFactory);
-            CoreDbProvider coreDbProvider = new CoreDbProvider(loggerFactory, storageSection);
-            IAccountService accountService = new AccountService(loggerFactory, coreDbProvider, Substitute.For<ITokenService>(), partitionProvider, limitationSection);
-            return accountService.CreateUserAccount("Acct-" + DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(), "Account for participant service tests.").Result;
         }
 
         private static IParticipantService GetParticipantService()

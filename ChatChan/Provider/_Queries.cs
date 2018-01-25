@@ -18,9 +18,9 @@
         public const string CoreImageCreation = "INSERT INTO _images(Uuid, Type, Data) VALUES(@uuid,@type,@data)";
 
         public const string CoreImageMetaQueryByUuid =
-            "SELECT Id, Type, CreatedAt FROM _images WHERE Uuid = @uuid AND IsDeleted = 0";
+            "SELECT Id, Type, CreatedAt, IsDeleted FROM _images WHERE Uuid = @uuid";
 
-        public const string CoreImageQueryByUuid = "SELECT Type, Data, CreatedAt FROM _images WHERE Uuid = @uuid AND IsDeleted = 0";
+        public const string CoreImageQueryByUuid = "SELECT Type, Data, CreatedAt, IsDeleted FROM _images WHERE Uuid = @uuid";
     }
 
     internal static class AccountQueries
@@ -28,10 +28,10 @@
         public const string UserAccountQueryCount = "SELECT COUNT(0) AS Count FROM accounts";
 
         public const string UserAccountQueryById =
-            "SELECT Id, Password, AccountName, DisplayName, Status, Avatar, `Partition`, CreatedAt, UpdatedAt, Version FROM accounts WHERE Id = @id AND IsDeleted = 0";
+            "SELECT Id, Password, AccountName, DisplayName, Status, Avatar, `Partition`, CreatedAt, UpdatedAt, Version FROM accounts WHERE Id = @id";
 
         public const string UserAccountQueryByAccountName =
-            "SELECT Id, Password, AccountName, DisplayName, Status, Avatar, `Partition`, CreatedAt, UpdatedAt, Version FROM accounts WHERE AccountName = @name AND IsDeleted = 0";
+            "SELECT Id, Password, AccountName, DisplayName, Status, Avatar, `Partition`, CreatedAt, UpdatedAt, Version FROM accounts WHERE AccountName = @name";
 
         public const string UserAccountCreation = "INSERT INTO accounts(AccountName, DisplayName, Status, `Partition`) VALUES(@name,@display_name,@status,@partition)";
 
@@ -75,11 +75,23 @@
             `Version`      INT          NOT NULL DEFAULT 0,
          */
         private const string ChannelSelectionSlim =
-            "SELECT `Id`,`Type`,`Partition`,`DisplayName`,`MemberHash`,`OwerActId`,`CreatedAt`,`UpdatedAt`,`IsDeleted`,`Version` FROM `channels` ";
+            "SELECT `Id`,`Type`,`Partition`,`DisplayName`,`Status`,`OwnerActId`,`CreatedAt`,`UpdatedAt`,`IsDeleted`,`Version` FROM `channels` ";
 
         public static readonly string ChannelQueryById = ChannelSelectionSlim + "WHERE `Id` = @id";
 
-        public static readonly string ChannelQueryMembersById = "SELECT `MemberList`,`Version` FROM `channels` WHERE `Id` = @id";
+        public static readonly string ChannelQueryMembersById =
+            "SELECT `Id`,`Type`,`Status`,`MemberList`,`IsDeleted`,`Version` FROM `channels` WHERE `Id` = @id";
+
+        public static readonly string ChannelCreate =
+            "INSERT INTO `channels` (`Type`,`Partition`,`DisplayName`,`Status`,`OwnerActId`,`MemberList`,`MemberHash`)" +
+            " VALUES (@type,@partition,@displayName,@status,@ownerActId,@memberList,@memberHash)";
+
+        public static readonly string ChannelCountRecords = "SELECT COUNT(0) FROM `channels`";
+
+        public static readonly string ChannelQueryByOwnerAndMemberHash =
+            ChannelSelectionSlim + "WHERE `OwnerActId` = @ownerId AND `MemberHash` = @memberHash";
+
+        public static readonly string ChannelUpdateSoftDelete = "UPDATE `channels` SET `IsDeleted` = @deleted WHERE `Id` = @id";
     }
 
     internal static class ParticipantQueries

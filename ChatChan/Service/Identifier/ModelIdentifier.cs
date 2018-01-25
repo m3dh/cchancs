@@ -15,15 +15,12 @@
         [JsonProperty(PropertyName = "t")]
         public ChannelType Type { get; set; }
 
-        [JsonProperty(PropertyName = "id")]
+        [JsonProperty(PropertyName = "i")]
         public int Id { get; set; }
-
-        [JsonProperty(PropertyName = "p")]
-        public int Partition { get; set; }
 
         public override string ToString()
         {
-            return $"{this.Type.ToString()}:{this.Partition}:{this.Id}";
+            return $"{this.Type.ToString()}:{this.Id}";
         }
 
         public static bool TryParse(string input, out ChannelId channelId)
@@ -35,7 +32,7 @@
 
             channelId = null;
             string[] inputSplits = input.Split(':');
-            if (3 != inputSplits.Length)
+            if (2 != inputSplits.Length)
             {
                 return false;
             }
@@ -45,17 +42,12 @@
                 return false;
             }
 
-            if(!int.TryParse(inputSplits[1], out int partition))
+            if (!int.TryParse(inputSplits[1], out int id))
             {
                 return false;
             }
 
-            if (!int.TryParse(inputSplits[2], out int id))
-            {
-                return false;
-            }
-
-            channelId = new ChannelId { Id = id, Type = channelType, Partition = partition };
+            channelId = new ChannelId { Id = id, Type = channelType };
             return true;
         }
     }

@@ -53,7 +53,6 @@
                 }
                 else
                 {
-                    this.logger.LogInformation("No new queue event found, sleeping...");
                     await Task.Delay(5000);
                 }
             }

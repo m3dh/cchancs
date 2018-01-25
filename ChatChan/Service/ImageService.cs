@@ -67,7 +67,7 @@
                     throw new BadRequest(nameof(imageId.Type), imageId.Type.ToString());
             }
 
-            if (ret == null)
+            if (ret == null || ret.IsDeleted)
             {
                 throw new NotFound($"Image with ID {imageId} is not found");
             }
@@ -92,7 +92,7 @@
                 (await this.coreDb.QueryAll<CoreImage>(ImageQueries.CoreImageQueryByUuid, new Dictionary<string, object> { { "@uuid", imageId.Guid.ToString("N") } }))
                 .SingleOrDefault();
 
-            if (image == null || image.Data == null)
+            if (image == null || image.Data == null || image.IsDeleted)
             {
                 throw new NotFound($"Core image with ID {imageId} is not found");
             }

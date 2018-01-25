@@ -19,10 +19,13 @@
 
         public DateTimeOffset CreatedAt { get; set; }
 
+        public bool IsDeleted { get; set; }
+
         public virtual Task Fill(DbDataReader reader)
         {
-            this.CreatedAt = reader.ReadColumn(nameof(this.CreatedAt), reader.GetDateTime);
+            this.CreatedAt = reader.ReadDateColumn(nameof(this.CreatedAt));
             this.ContentType = reader.ReadColumn("Type", reader.GetString);
+            this.IsDeleted = reader.ReadColumn(nameof(this.IsDeleted), reader.GetBoolean);
 
             return Task.FromResult(0);
         }

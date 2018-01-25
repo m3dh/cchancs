@@ -2,6 +2,7 @@
 {
     using System;
     using System.Collections.Generic;
+    using System.Data;
     using System.IO;
     using System.Linq;
     using System.Security.Cryptography;
@@ -96,6 +97,11 @@
                     { "@status", (long)UserAccountStatus.NewAccount },
                 });
 
+            if (affect <= 0)
+            {
+                throw new DataException("Unable to insert new account record...");
+            }
+
             this.logger.LogDebug($"New user account created with 'affect' = {affect}, 'id' = {id}");
             return new AccountId { Name = accountName, Type = AccountId.AccountType.UA };
         }
@@ -155,6 +161,7 @@
 
             if ((DateTimeOffset.UtcNow - account.UpdatedAt).TotalSeconds > this.serviceLimits.AllowedSetAccountPaswordIntervalSecs)
             {
+                this.logger.LogInformation("Account password interval {0}s ({1})", (DateTimeOffset.UtcNow - account.UpdatedAt).TotalSeconds, account.UpdatedAt);
                 throw new NotAllowed("Account password setting exceeded the max allowed time window.");
             }
 

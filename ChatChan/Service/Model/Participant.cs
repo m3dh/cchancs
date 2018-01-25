@@ -43,8 +43,8 @@
 
             this.ChannelId = channelIdObj;
 
-            this.CreatedAt = reader.ReadColumn(nameof(this.CreatedAt), reader.GetDateTime);
-            this.UpdatedAt = reader.ReadColumn(nameof(this.UpdatedAt), reader.GetDateTime);
+            this.CreatedAt = reader.ReadDateColumn(nameof(this.CreatedAt));
+            this.UpdatedAt = reader.ReadDateColumn(nameof(this.UpdatedAt));
             this.Version = reader.ReadColumn(nameof(this.Version), reader.GetInt32);
             this.IsDeleted = reader.ReadColumn(nameof(this.IsDeleted), reader.GetBoolean);
             return Task.FromResult(0);

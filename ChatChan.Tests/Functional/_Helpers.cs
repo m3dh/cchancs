@@ -48,6 +48,7 @@
                 req.Content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
                 req.Content.Headers.ContentType.CharSet = "utf-8";
                 resp = client.SendAsync(req).Result;
+                var err = resp.Content.ReadAsStringAsync().Result;
                 Debug.Assert(HttpStatusCode.Created == resp.StatusCode);
 
                 // Logon.
