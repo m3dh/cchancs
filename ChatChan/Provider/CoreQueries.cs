@@ -61,19 +61,6 @@
 
     internal static class ChannelQueries
     {
-        /*
-         *  `Id`           INT          NOT NULL AUTO_INCREMENT,
-            `Type`         INT          NOT NULL, -- 1 = 1:1 chat, 2 = In group chat, 3 = Someone to group chat.
-            `Partition`    INT          NOT NULL,
-            `DisplayName`  VARCHAR(100) NULL,
-            `MemberList`   TEXT         NOT NULL,
-            `MemberHash`   VARCHAR(45)  NOT NULL,
-            `OwnerActId`   VARCHAR(45)  NOT NULL, -- Owner's account ID, for type = 1 chats, this field is not used.
-            `CreatedAt`    DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
-            `UpdatedAt`    DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-            `IsDeleted`    TINYINT      NOT NULL DEFAULT 0,
-            `Version`      INT          NOT NULL DEFAULT 0,
-         */
         private const string ChannelSelectionSlim =
             "SELECT `Id`,`Type`,`Partition`,`DisplayName`,`Status`,`OwnerActId`,`CreatedAt`,`UpdatedAt`,`IsDeleted`,`Version` FROM `channels` ";
 
@@ -91,20 +78,9 @@
         public static readonly string ChannelQueryByOwnerAndMemberHash =
             ChannelSelectionSlim + "WHERE `OwnerActId` = @ownerId AND `MemberHash` = @memberHash";
 
+        public static readonly string ChannelQueryByOwner =
+            ChannelSelectionSlim + "WHERE `OwnerActId` = @ownerId";
+
         public static readonly string ChannelUpdateSoftDelete = "UPDATE `channels` SET `IsDeleted` = @deleted WHERE `Id` = @id";
-    }
-
-    internal static class ParticipantQueries
-    {
-        private const string ParticipantSelection = "SELECT `Id`,`AccountId`,`ChannelId`,`CreatedAt`,`UpdatedAt`,`IsDeleted`,`Version` FROM `participants` ";
-
-        public static readonly string ParticipantQueryByIds = ParticipantSelection + "WHERE `AccountId` = @accountId AND `ChannelId` = @channelId";
-
-        public static readonly string ParticipantQueryByAccountId = ParticipantSelection + "WHERE `AccountId` = @accountId";
-
-        public static readonly string ParticipantCreate = "INSERT INTO `participants` (`AccountId`,`ChannelId`) VALUES (@accountId,@channelId)";
-
-        public static readonly string ParticipantUpdateSoftDelete =
-            "UPDATE `participants` SET `IsDeleted` = @deleted WHERE `AccountId` = @accountId AND `ChannelId` = @channelId";
     }
 }

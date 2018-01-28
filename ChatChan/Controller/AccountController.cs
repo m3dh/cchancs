@@ -191,10 +191,7 @@
                 throw new BadRequest(nameof(inputAccount));
             }
 
-            if (!string.Equals(
-                accountIdObj.ToString(),
-                this.HttpContext.Items[Constants.HttpContextRealUserNameKey].ToString(),
-                StringComparison.OrdinalIgnoreCase))
+            if (!this.IsAuthAccount(accountIdObj))
             {
                 throw new Forbidden("Updating another account is not allowed.");
             }

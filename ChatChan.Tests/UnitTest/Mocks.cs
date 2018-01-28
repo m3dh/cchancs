@@ -75,6 +75,8 @@
             });
         }
 
+        public static int AccountCnt = 0;
+
         public static AccountId CreateAccount()
         {
             ILoggerFactory loggerFactory = Mocks.GetLoggerFactory();
@@ -83,7 +85,7 @@
             IDataPartitionProvider partitionProvider = new DataPartitionsManager(storageSection, loggerFactory);
             CoreDbProvider coreDbProvider = new CoreDbProvider(loggerFactory, storageSection);
             IAccountService accountService = new AccountService(loggerFactory, coreDbProvider, Substitute.For<ITokenService>(), partitionProvider, limitationSection);
-            return accountService.CreateUserAccount("Acct-" + Guid.NewGuid().ToString("N").Substring(19), "Account for participant service tests.").Result;
+            return accountService.CreateUserAccount("Acct-" + (AccountCnt++).ToString("D3") + Guid.NewGuid().ToString("N").Substring(19), "Account for participant service tests.").Result;
         }
     }
 }

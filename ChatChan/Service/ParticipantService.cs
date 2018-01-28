@@ -12,6 +12,7 @@
     using ChatChan.Service.Model;
 
     using Microsoft.Extensions.Logging;
+    using Newtonsoft.Json;
 
     public interface IParticipantService
     {
@@ -19,6 +20,15 @@
         Task<IList<Participant>> ListAccountParticipants(AccountId accountId);
         Task<int> LinkAccountWithChannel(AccountId accountId, ChannelId channelId);
         Task UnlinkAccountWithChannel(AccountId accountId, ChannelId channelId);
+
+        // List participants with message info: for the first 'updates' screen usage.
+        Task<IList<Participant>> ListAccountParticipantsWithMessageInfo(AccountId accountId, long dtSince);
+
+        // Update participant items with a new message, could be a creation.
+        Task<bool> UpdateParticipantWithNewMessage(AccountId accountId, ChannelId channelId, Message message);
+
+        // This is a ack from the message reader - for cross device syncs.
+        Task<bool> UpdateParticipantLastReadMessageCount(AccountId accountId, ChannelId channelId, int messageCount);
     }
 
     public class ParticipantService : IParticipantService
@@ -62,7 +72,7 @@
                     {
                         { "@deleted", 0 },
                         { "@accountId", accountId.ToString() },
-                        { "@channelId", channelId.ToString() }
+                        { "@channelId", channelId.ToString() },
                     });
 
                 if (aff > 0)
@@ -75,11 +85,11 @@
             else
             {
                 (int aff, long id) = await executor.Execute(
-                    ParticipantQueries.ParticipantCreate,
+                    ParticipantQueries.ParticipantCreate, // Without message info
                     new Dictionary<string, object>
                     {
                         { "@accountId", accountId.ToString() },
-                        { "@channelId", channelId.ToString() }
+                        { "@channelId", channelId.ToString() },
                     });
 
                 if (aff > 0)
@@ -114,6 +124,153 @@
                 new Dictionary<string, object> { { "@accountId", accountId.ToString() } });
 
             return result.Where(p => !p.IsDeleted).ToArray();
+        }
+
+        public async Task<IList<Participant>> ListAccountParticipantsWithMessageInfo(AccountId accountId, long dtSince)
+        {
+            if (accountId == null)
+            {
+                throw new ArgumentNullException(nameof(accountId));
+            }
+
+            int partition = await this.accountService.GetUserAccountPartition(accountId);
+            MySqlExecutor executor = this.partitionProvider.GetDataExecutor(partition);
+            IList<Participant> result = await executor.QueryAll<Participant>(
+                ParticipantQueries.ParticipantQueryFullByAccountIdAndLastMsgDt,
+                new Dictionary<string, object>
+                {
+                    {"@accountId", accountId.ToString() },
+                    {"@lastMsgDt", dtSince },
+                });
+
+            return result.Where(r => !r.IsDeleted).ToList();
+        }
+
+        public async Task<bool> UpdateParticipantWithNewMessage(AccountId accountId, ChannelId channelId, Message message)
+        {
+            if (accountId == null)
+            {
+                throw new ArgumentNullException(nameof(accountId));
+            }
+
+            if (channelId == null)
+            {
+                throw new ArgumentNullException(nameof(channelId));
+            }
+
+            if (message == null)
+            {
+                throw new ArgumentNullException(nameof(message));
+            }
+
+            if (string.Equals(message.SenderAccountId.Name, accountId.Name, StringComparison.OrdinalIgnoreCase))
+            {
+                throw new InvalidOperationException("Sending message to the same account is not allowed.");
+            }
+
+            ParticipantMessageInfo messageInfo = new ParticipantMessageInfo
+            {
+                MessageFirst100Chars = message.GetFirst100MessageChars(),
+                MessageId = message.MessageUuid,
+                SenderAccountId = message.SenderAccountId,
+            };
+
+            // 0. Try get the participant
+            Participant participant = await this.GetParticipant(accountId, channelId);
+            int partition = await this.accountService.GetUserAccountPartition(accountId);
+            MySqlExecutor executor = this.partitionProvider.GetDataExecutor(partition);
+            string messageInfoJson = JsonConvert.SerializeObject(messageInfo);
+            long messageDt = message.MessageTsDt.ToUnixTimeMilliseconds();
+            if (participant == null)
+            {
+                // 1. Participant not exist, try link it.
+                (int aff, long id) = await executor.Execute(
+                    ParticipantQueries.ParticipantCreateWithMessage, // With message info
+                    new Dictionary<string, object>
+                    {
+                        { "@accountId", accountId.ToString() },
+                        { "@channelId", channelId.ToString() },
+                        { "@messageInfo", messageInfoJson },
+                        { "@lastMsgDt", messageDt }
+                    });
+
+                if (aff > 0)
+                {
+                    this.logger.LogDebug("New participant record created with ID = '{0}' w/ message", id);
+                }
+
+                return aff > 0;
+            }
+            else
+            {
+                if (participant.LastMessageDt < messageDt)
+                {
+                    // This message is latest.
+                    (int aff, long _) = await executor.Execute(
+                        ParticipantQueries.ParticipantUpdateMessageInfo,
+                        new Dictionary<string, object>
+                        {
+                            { "@messageInfo", messageInfoJson },
+                            { "@lastMsgDt", messageDt },
+                            { "@id", participant.Id },
+                            { "@version", participant.Version }
+
+                        });
+
+                    return aff > 0;
+                }
+                else
+                {
+                    // This message is not latest, just update message count.
+                    (int aff, long _) = await executor.Execute(
+                        ParticipantQueries.ParticipantUpdateMessageCount,
+                        new Dictionary<string, object>
+                        {
+                            { "@id", participant.Id },
+                            { "@version", participant.Version }
+                        });
+
+                    return aff > 0;
+                }
+            }
+        }
+
+        public async Task<bool> UpdateParticipantLastReadMessageCount(AccountId accountId, ChannelId channelId, int messageCount)
+        {
+            if (accountId == null)
+            {
+                throw new ArgumentNullException(nameof(accountId));
+            }
+
+            if (channelId == null)
+            {
+                throw new ArgumentNullException(nameof(channelId));
+            }
+
+            Participant participant = await this.GetParticipant(accountId, channelId);
+            if (participant == null || participant.IsDeleted)
+            {
+                throw new NotFound($"Cannot find participant of {accountId}@{channelId}");
+            }
+
+            if (participant.MessageCount < messageCount || participant.MessageRead > messageCount)
+            {
+                throw new Forbidden($"Message count forbids this update : Count {participant.MessageCount}, Read {participant.MessageRead}");
+            }
+
+            int partition = await this.accountService.GetUserAccountPartition(accountId);
+            MySqlExecutor executor = this.partitionProvider.GetDataExecutor(partition);
+
+            (int aff, long _) = await executor.Execute(
+                ParticipantQueries.ParticipantUpdateLastReadCount,
+                new Dictionary<string, object>
+                {
+                    { "@read", messageCount },
+                    { "@id", participant.Id },
+                    { "@version", participant.Version }
+                });
+
+            return aff > 0;
         }
 
         private async Task SoftDeleteParticipant(AccountId accountId, ChannelId channelId)

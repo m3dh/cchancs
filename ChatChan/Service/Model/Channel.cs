@@ -41,6 +41,18 @@
             this.Type = (ChannelId.ChannelType)reader.ReadColumn(nameof(this.Type), reader.GetInt32);
             this.Partition = reader.ReadColumn(nameof(this.Partition), reader.GetInt32);
             this.Status = reader.ReadColumn(nameof(this.Status), reader.GetInt64);
+            string ownerId = reader.ReadColumn("OwnerActId", reader.GetString);
+            if (!string.IsNullOrEmpty(ownerId))
+            {
+                if (!AccountId.TryParse(ownerId, out AccountId accountObj))
+                {
+                    throw new InvalidOperationException($"Unexpected owner account ID : {ownerId}");
+                }
+                else
+                {
+                    this.OwnerAccountId = accountObj;
+                }
+            }
             this.DisplayName = reader.ReadColumn(nameof(this.DisplayName), reader.GetString);
             this.CreatedAt = reader.ReadDateColumn(nameof(this.CreatedAt));
             this.UpdatedAt = reader.ReadDateColumn(nameof(this.UpdatedAt));

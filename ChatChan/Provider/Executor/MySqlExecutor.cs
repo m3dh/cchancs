@@ -12,7 +12,6 @@
     using Microsoft.Extensions.Logging;
 
     using MySql.Data.MySqlClient;
-    using MySql.Data.Types;
 
     public interface ISqlRecord
     {

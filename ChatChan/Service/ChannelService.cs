@@ -23,6 +23,8 @@
         Task<int> CountChannel();
 
         Task<Channel> GetChannel(ChannelId channelId);
+        Task<IList<Channel>> GetChannels(AccountId accountId);
+        Task<ChannelMemberList> GetChannelMembers(ChannelId channelId);
         Task<int> GetChannelParititon(ChannelId channelId);
         Task<ChannelId> CreateDirectMessageChannel(AccountId from, AccountId to, string displayName);
         Task DeleteChannel(ChannelId channelId);
@@ -74,10 +76,10 @@
                 throw new BadRequest("Cannot create direct message for the same account.");
             }
 
-            List<AccountId> accounts = new List<AccountId> { source, target };
+            List<AccountId> accounts = new List<AccountId> { source, target }.OrderBy(a => a.Name).ToList();
             string memberListJson = JsonConvert.SerializeObject(accounts);
             string memberListHash = this.GetMemberJsonHash(memberListJson);
-            string ownerAccountId = accounts.OrderBy(a => a.Name).First().ToString();
+            string ownerAccountId = accounts.First().ToString();
 
             try
             {
@@ -138,12 +140,24 @@
                 throw new ArgumentNullException(nameof(channelId));
             }
 
-            return this.UpdateChannelSoftDelete(channelId.Id, false);
+            return this.UpdateChannelSoftDelete(channelId.Id, true);
         }
 
         public Task<int> CountChannel()
         {
             return this.coreDb.QueryScalar<int>(ChannelQueries.ChannelCountRecords);
+        }
+
+        public async Task<IList<Channel>> GetChannels(AccountId accountId)
+        {
+            if (accountId == null)
+            {
+                throw new ArgumentNullException(nameof(accountId));
+            }
+
+            return await this.coreDb.QueryAll<Channel>(
+                ChannelQueries.ChannelQueryByOwner,
+                new Dictionary<string, object> { { "@ownerId", accountId.ToString() } });
         }
 
         public async Task<Channel> GetChannel(ChannelId channelId)
@@ -156,6 +170,25 @@
             // Group and DM channels all stored in this table.
             Channel channel = (await this.coreDb.QueryAll<Channel>(
                 ChannelQueries.ChannelQueryById,
+                new Dictionary<string, object> { { "@id", channelId.Id } })).FirstOrDefault();
+
+            if (channel == null || channel.IsDeleted)
+            {
+                throw new NotFound($"Channel ID = '{channelId}' is not found");
+            }
+
+            return channel;
+        }
+
+        public async Task<ChannelMemberList> GetChannelMembers(ChannelId channelId)
+        {
+            if (channelId == null)
+            {
+                throw new ArgumentNullException(nameof(channelId));
+            }
+
+            ChannelMemberList channel = (await this.coreDb.QueryAll<ChannelMemberList>(
+                ChannelQueries.ChannelQueryMembersById,
                 new Dictionary<string, object> { { "@id", channelId.Id } })).FirstOrDefault();
 
             if (channel == null || channel.IsDeleted)
