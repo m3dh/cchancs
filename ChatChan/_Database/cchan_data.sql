@@ -23,12 +23,14 @@ CREATE TABLE IF NOT EXISTS `participants` (
 -- Messages are partitioned by channels.
 CREATE TABLE IF NOT EXISTS `messages` (
 	`Id`           BIGINT       NOT NULL AUTO_INCREMENT,
+	`Uuid`         VARCHAR(36)  NOT NULL,
 	`Type`         INT          NOT NULL,
-	`Message`      TEXT         NOT NULL,
+	`MessageBody`  TEXT         NOT NULL,
 	`ChannelId`    VARCHAR(45)  NOT NULL,
 	`SenderActId`  VARCHAR(45)  NOT NULL,
-	`Uuid`         VARCHAR(36)  NOT NULL,
+	`MessageDt`    BIGINT       NOT NULL,
 	`CreatedAt`    DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
 	PRIMARY KEY (`Id`),
-	CONSTRAINT `UIX_ChannelId_Uuid` UNIQUE INDEX (`ChannelId`, `Uuid`)
+	CONSTRAINT `UIX_ChannelId_Uuid` UNIQUE INDEX (`ChannelId`, `Uuid`),
+	INDEX `IX_ChannelId_MessageDt` (`ChannelId`,`MessageDt`)
 ) ENGINE = InnoDb DEFAULT CHARSET=UTF8MB4 AUTO_INCREMENT=1;

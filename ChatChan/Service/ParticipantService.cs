@@ -171,7 +171,7 @@
             ParticipantMessageInfo messageInfo = new ParticipantMessageInfo
             {
                 MessageFirst100Chars = message.GetFirst100MessageChars(),
-                MessageId = message.MessageUuid,
+                MessageId = message.Uuid,
                 SenderAccountId = message.SenderAccountId,
             };
 
@@ -180,7 +180,7 @@
             int partition = await this.accountService.GetUserAccountPartition(accountId);
             MySqlExecutor executor = this.partitionProvider.GetDataExecutor(partition);
             string messageInfoJson = JsonConvert.SerializeObject(messageInfo);
-            long messageDt = message.MessageTsDt.ToUnixTimeMilliseconds();
+            long messageDt = message.MessageTsDt;
             if (participant == null)
             {
                 // 1. Participant not exist, try link it.

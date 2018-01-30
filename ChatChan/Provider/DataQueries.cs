@@ -42,4 +42,13 @@
 
         public static readonly string ParticipantUpdateLastReadCount = "UPDATE `participants` SET `MessageRead`=@read WHERE `Id`=@id AND `Version`=@version";
     }
+
+    internal static class MessageQueries
+    {
+        public static readonly string CreateMessage =
+            "INSERT INTO `messages` (`Uuid`,`Type`,`MessageBody`,`ChannelId`,`SenderActId`,`MessageDt`) VALUES (@uuid,@type,@body,@channelId,@senderId,@messageDt)";
+
+        public static readonly string QueryMessageByChannelIdAndDt =
+            "SELECT `Id`,`Uuid`,`Type`,`MessageBody`,`SenderActId`,`MessageDt` FROM `messages` WHERE `ChannelId`=@channelId AND `MessageDt` > @msgDt";
+    }
 }

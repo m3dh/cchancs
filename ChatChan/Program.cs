@@ -47,6 +47,7 @@
                 .AddSingleton<IAccountService, AccountService>()
                 .AddSingleton<ITokenService, TokenService>()
                 .AddSingleton<IChannelService, ChannelService>()
+                .AddSingleton<IMessageService, MessageService>()
                 .AddSingleton<IParticipantService, ParticipantService>()
                 .AddSingleton<IQueueService, QueueService>();
 

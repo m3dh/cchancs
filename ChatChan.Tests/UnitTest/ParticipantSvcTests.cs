@@ -66,9 +66,9 @@
             // Create participant with message
             bool result = service.UpdateParticipantWithNewMessage(account0, channel0, new Message
             {
-                MessageText = "Lorum ipsum",
-                MessageTsDt = DateTimeOffset.UtcNow,
-                MessageUuid = Guid.NewGuid().ToString("N"),
+                MessageBody = "Lorum ipsum",
+                MessageTsDt = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(),
+                Uuid = Guid.NewGuid().ToString("N"),
                 SenderAccountId = account1
             }).Result;
 
@@ -94,9 +94,9 @@
 
             result = service.UpdateParticipantWithNewMessage(account0, channel1, new Message
             {
-                MessageText = "group message",
-                MessageTsDt = DateTimeOffset.UtcNow,
-                MessageUuid = Guid.NewGuid().ToString("N"),
+                MessageBody = "group message",
+                MessageTsDt = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(),
+                Uuid = Guid.NewGuid().ToString("N"),
                 SenderAccountId = account1
             }).Result;
 
@@ -115,9 +115,9 @@
             // Append one new message.
             result = service.UpdateParticipantWithNewMessage(account0, channel0, new Message
             {
-                MessageText = "Lorum ipsum 1",
-                MessageTsDt = DateTimeOffset.UtcNow,
-                MessageUuid = Guid.NewGuid().ToString("N"),
+                MessageBody = "Lorum ipsum 1",
+                MessageTsDt = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(),
+                Uuid = Guid.NewGuid().ToString("N"),
                 SenderAccountId = account1
             }).Result;
 
@@ -132,9 +132,9 @@
             // Append an old message.
             result = service.UpdateParticipantWithNewMessage(account0, channel0, new Message
             {
-                MessageText = "Useless message",
-                MessageTsDt = DateTimeOffset.UtcNow.AddMinutes(-10),
-                MessageUuid = Guid.NewGuid().ToString("N"),
+                MessageBody = "Useless message",
+                MessageTsDt = DateTimeOffset.UtcNow.AddMinutes(-10).ToUnixTimeMilliseconds(),
+                Uuid = Guid.NewGuid().ToString("N"),
                 SenderAccountId = account1,
             }).Result;
             Assert.True(result);
@@ -151,7 +151,7 @@
             Assert.Equal(3, parts[0].MessageRead);
         }
 
-        private static IParticipantService GetParticipantService()
+        public static IParticipantService GetParticipantService()
         {
             ILoggerFactory loggerFactory = Mocks.GetLoggerFactory();
             IOptions<StorageSection> storageSection = Mocks.GetStorageSection();

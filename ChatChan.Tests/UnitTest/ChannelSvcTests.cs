@@ -48,7 +48,7 @@
             Assert.Equal(account2.ToString(), channelFull.MemberList[1].ToString());
         }
 
-        private static IChannelService GetChannelService()
+        public static IChannelService GetChannelService()
         {
             ILoggerFactory loggerFactory = Mocks.GetLoggerFactory();
             IOptions<StorageSection> storageSection = Mocks.GetStorageSection();

@@ -1,32 +1,77 @@
 ﻿namespace ChatChan.Service.Model
 {
-    using System;
+    using System.Data;
+    using System.Data.Common;
+    using System.Threading.Tasks;
+
+    using ChatChan.Provider.Executor;
     using ChatChan.Service.Identifier;
 
-    public class Message
+    public enum MessageType : uint
     {
-        public string MessageUuid { get; set; }
+        Text = 0,
+    }
 
-        public DateTimeOffset MessageTsDt { get; set; }
+    public class Message : ISqlRecord
+    {
+        public long Id { get; set; }
 
-        public string MessageText { get; set; }
+        public MessageType Type { get; set; }
+
+        public string Uuid { get; set; }
 
         public AccountId SenderAccountId { get; set; }
 
+        public ChannelId ChannelId { get; set; }
+
+        public string MessageBody { get; set; }
+
+        public long MessageTsDt { get; set; }
+
         public string GetFirst100MessageChars()
         {
-            if (string.IsNullOrEmpty(this.MessageText))
+            if (string.IsNullOrEmpty(this.MessageBody))
             {
                 return null;
             }
-            else if (this.MessageText.Length > 100)
+            else if (this.MessageBody.Length > 100)
             {
-                return this.MessageText.Substring(0, 100);
+                return this.MessageBody.Substring(0, 100);
             }
             else
             {
-                return this.MessageText;
+                return this.MessageBody;
             }
+        }
+
+        public Task Fill(DbDataReader reader)
+        {
+            this.Id = reader.ReadColumn(nameof(this.Id), reader.GetInt64);
+            this.Type = (MessageType)reader.ReadColumn(nameof(this.Type), reader.GetInt32);
+            this.Uuid = reader.ReadColumn(nameof(this.Uuid), reader.GetString);
+            string senderAccountId = reader.ReadColumn("SenderActId", reader.GetString);
+            if (!AccountId.TryParse(senderAccountId, out AccountId senderActIdObj))
+            {
+                throw new DataException($"Unexpected data format for account ID for {this.Id}");
+            }
+
+            this.SenderAccountId = senderActIdObj;
+
+            string channelId = reader.ReadColumn(nameof(this.ChannelId), reader.GetString);
+            if (!string.IsNullOrEmpty(channelId))
+            {
+                if (!ChannelId.TryParse(channelId, out ChannelId channelIdObj))
+                {
+                    throw new DataException($"Unexpected data format for channel ID for {this.Id}");
+                }
+
+                this.ChannelId = channelIdObj;
+            }
+
+            this.MessageBody = reader.ReadColumn(nameof(this.MessageBody), reader.GetString);
+            this.MessageTsDt = reader.ReadColumn("MessageDt", reader.GetInt64);
+
+            return Task.FromResult(0);
         }
     }
 }
