@@ -14,7 +14,7 @@
     public interface IMessageService
     {
         Task<Message> CreateMessage(ChannelId channelId, AccountId senderId, MessageType type, string uuid, string body);
-        Task<IList<Message>> ListMessages(ChannelId channelId, long lastMsgDt);
+        Task<IList<Message>> ListMessages(ChannelId channelId, long lastMsgDt, int selection = 150);
     }
 
     public class MessageService : IMessageService
@@ -99,7 +99,7 @@
             };
         }
 
-        public async Task<IList<Message>> ListMessages(ChannelId channelId, long lastMsgDt)
+        public async Task<IList<Message>> ListMessages(ChannelId channelId, long lastMsgDt, int selection = 150)
         {
             if (channelId == null)
             {
@@ -113,7 +113,8 @@
                 new Dictionary<string, object>
                 {
                     { "@channelId", channelId.ToString() },
-                    { "@msgDt", lastMsgDt }
+                    { "@msgDt", lastMsgDt },
+                    { "@selection", selection }
                 });
         }
     }

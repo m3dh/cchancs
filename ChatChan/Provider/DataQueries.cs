@@ -49,6 +49,6 @@
             "INSERT INTO `messages` (`Uuid`,`Type`,`MessageBody`,`ChannelId`,`SenderActId`,`MessageDt`) VALUES (@uuid,@type,@body,@channelId,@senderId,@messageDt)";
 
         public static readonly string QueryMessageByChannelIdAndDt =
-            "SELECT `Id`,`Uuid`,`Type`,`MessageBody`,`SenderActId`,`MessageDt` FROM `messages` WHERE `ChannelId`=@channelId AND `MessageDt` > @msgDt";
+            "SELECT `Id`,`Uuid`,`Type`,`MessageBody`,`SenderActId`,`MessageDt` FROM `messages` WHERE `ChannelId`=@channelId AND `MessageDt` > @msgDt ORDER BY `MessageDt` LIMIT @selection";
     }
 }
