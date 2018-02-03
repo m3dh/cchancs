@@ -15,6 +15,7 @@ CREATE TABLE IF NOT EXISTS `participants` (
     `UpdatedAt`     DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     `IsDeleted`     TINYINT      NOT NULL DEFAULT 0,
     `Version`       INT          NOT NULL DEFAULT 0,
+    `Status`        BIGINT       NOT NULL DEFAULT 0,
     PRIMARY KEY (`Id`),
     CONSTRAINT `UIX_AccountId_ChannelId` UNIQUE INDEX (`AccountId`, `ChannelId`),
     INDEX `IX_AccountId_LastMsgDt` (`AccountId`,`LastMessageDt`)
