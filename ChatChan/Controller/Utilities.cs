@@ -7,7 +7,7 @@
 
     public static class Utilities
     {
-        public static bool IsAuthAccount(this Controller controller, AccountId accountId)
+        public static bool IsAuthAccount(this ControllerBase controller, AccountId accountId)
         {
             if (accountId == null)
             {

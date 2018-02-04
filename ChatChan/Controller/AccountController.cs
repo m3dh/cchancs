@@ -70,7 +70,7 @@
         public string Password { get; set; }
     }
 
-    public class AccountController : Controller
+    public class AccountController : ControllerBase
     {
         private readonly IAccountService accountService;
 

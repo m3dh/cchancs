@@ -30,7 +30,7 @@
         public Uri Uri { get; set; }
     }
 
-    public class ImageController : Controller
+    public class ImageController : ControllerBase
     {
         private static readonly string[] AcceptableImageContentTypes = new[] { "image/jpeg" };
         private readonly IImageService imageService;

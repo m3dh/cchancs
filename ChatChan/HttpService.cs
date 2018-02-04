@@ -11,6 +11,7 @@
     using Microsoft.Extensions.Options;
 
     using Newtonsoft.Json;
+    using Microsoft.AspNetCore.Mvc.Formatters;
 
     public class HttpService
     {
@@ -32,7 +33,9 @@
                 .AddSingleton<TokenAuthActionFilter>()
 
                 // Framework
-                .AddMvc(options => { options.Filters.Add<GeneralHttpGlobalFilter>(); })
+                .AddMvcCore(options => { options.Filters.Add<GeneralHttpGlobalFilter>(); })
+                .AddFormatterMappings()
+                .AddJsonFormatters()
                 .AddJsonOptions(options => { options.SerializerSettings.NullValueHandling = NullValueHandling.Ignore; });
         }
 

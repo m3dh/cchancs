@@ -67,7 +67,7 @@
         public DateTimeOffset CreatedAt { get; set; }
     }
 
-    public class ChannelController : Controller
+    public class ChannelController : ControllerBase
     {
         private readonly IChannelService channelService;
         private readonly IParticipantService participantService;
