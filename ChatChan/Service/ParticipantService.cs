@@ -22,13 +22,13 @@
         Task UnlinkAccountWithChannel(AccountId accountId, ChannelId channelId);
 
         // List participants with message info: for the first 'updates' screen usage.
-        Task<IList<Participant>> ListAccountParticipantsWithMessageInfo(AccountId accountId, long dtSince);
+        Task<IList<Participant>> ListAccountParticipantsWithMessageInfo(AccountId accountId, DateTimeOffset prevUpdatedAt);
 
         // Update participant items with a new message, could be a creation.
         Task<bool> UpdateParticipantWithNewMessage(AccountId accountId, ChannelId channelId, Message message);
 
         // This is a ack from the message reader - for cross device syncs.
-        Task<bool> UpdateParticipantLastReadMessageCount(AccountId accountId, ChannelId channelId, int messageCount);
+        Task<bool> UpdateParticipantLastReadMessageOrdinal(AccountId accountId, ChannelId channelId, long ordinalNumber);
     }
 
     public class ParticipantService : IParticipantService
@@ -126,7 +126,7 @@
             return result.Where(p => !p.IsDeleted).ToArray();
         }
 
-        public async Task<IList<Participant>> ListAccountParticipantsWithMessageInfo(AccountId accountId, long dtSince)
+        public async Task<IList<Participant>> ListAccountParticipantsWithMessageInfo(AccountId accountId, DateTimeOffset prevUpdatedAt)
         {
             if (accountId == null)
             {
@@ -140,7 +140,7 @@
                 new Dictionary<string, object>
                 {
                     {"@accountId", accountId.ToString() },
-                    {"@lastMsgDt", dtSince },
+                    {"@updatedAt", prevUpdatedAt },
                 });
 
             return result.Where(r => !r.IsDeleted).ToList();
@@ -173,6 +173,7 @@
                 MessageFirst100Chars = message.GetFirst100MessageChars(),
                 MessageId = message.Uuid,
                 SenderAccountId = message.SenderAccountId,
+                MessageCreatedAt = message.CreatedAt,
             };
 
             // 0. Try get the participant
@@ -180,7 +181,6 @@
             int partition = await this.accountService.GetUserAccountPartition(accountId);
             MySqlExecutor executor = this.partitionProvider.GetDataExecutor(partition);
             string messageInfoJson = JsonConvert.SerializeObject(messageInfo);
-            long messageDt = message.MessageTsDt;
             if (participant == null)
             {
                 // 1. Participant not exist, try link it.
@@ -191,7 +191,7 @@
                         { "@accountId", accountId.ToString() },
                         { "@channelId", channelId.ToString() },
                         { "@messageInfo", messageInfoJson },
-                        { "@lastMsgDt", messageDt }
+                        { "@messageOn", message.OrdinalNumber }
                     });
 
                 if (aff > 0)
@@ -203,7 +203,7 @@
             }
             else
             {
-                if (participant.LastMessageDt < messageDt)
+                if (participant.LastMessageOrdinalNumber < message.OrdinalNumber)
                 {
                     // This message is latest.
                     (int aff, long _) = await executor.Execute(
@@ -211,7 +211,7 @@
                         new Dictionary<string, object>
                         {
                             { "@messageInfo", messageInfoJson },
-                            { "@lastMsgDt", messageDt },
+                            { "@lastMsgOn", message.OrdinalNumber },
                             { "@id", participant.Id },
                             { "@version", participant.Version }
 
@@ -221,21 +221,13 @@
                 }
                 else
                 {
-                    // This message is not latest, just update message count.
-                    (int aff, long _) = await executor.Execute(
-                        ParticipantQueries.ParticipantUpdateMessageCount,
-                        new Dictionary<string, object>
-                        {
-                            { "@id", participant.Id },
-                            { "@version", participant.Version }
-                        });
-
-                    return aff > 0;
+                    // Consider mis-ordered updates as succeeded updates.
+                    return true;
                 }
             }
         }
 
-        public async Task<bool> UpdateParticipantLastReadMessageCount(AccountId accountId, ChannelId channelId, int messageCount)
+        public async Task<bool> UpdateParticipantLastReadMessageOrdinal(AccountId accountId, ChannelId channelId, long ordinalNumber)
         {
             if (accountId == null)
             {
@@ -253,21 +245,20 @@
                 throw new NotFound($"Cannot find participant of {accountId}@{channelId}");
             }
 
-            if (participant.MessageCount < messageCount || participant.MessageRead > messageCount)
+            if (participant.LastMessageOrdinalNumber < ordinalNumber || participant.LastReadOrdinalNumber > ordinalNumber)
             {
-                throw new Forbidden($"Message count forbids this update : Count {participant.MessageCount}, Read {participant.MessageRead}");
+                throw new Forbidden($"Message count forbids this update : Count {participant.LastMessageOrdinalNumber}, Read {participant.LastReadOrdinalNumber}");
             }
 
             int partition = await this.accountService.GetUserAccountPartition(accountId);
             MySqlExecutor executor = this.partitionProvider.GetDataExecutor(partition);
 
             (int aff, long _) = await executor.Execute(
-                ParticipantQueries.ParticipantUpdateLastReadCount,
+                ParticipantQueries.ParticipantUpdateLastReadOrdinal,
                 new Dictionary<string, object>
                 {
-                    { "@read", messageCount },
+                    { "@lastReadOn", ordinalNumber },
                     { "@id", participant.Id },
-                    { "@version", participant.Version }
                 });
 
             return aff > 0;

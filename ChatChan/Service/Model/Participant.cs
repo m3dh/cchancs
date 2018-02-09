@@ -20,12 +20,9 @@
 
         public ParticipantMessageInfo MessageInfo { get; set; }
 
-        public int MessageCount { get; set; }
+        public long LastReadOrdinalNumber { get; set; }
 
-        public int MessageRead { get; set; }
-
-        // Dt timestamps are UNIX millisecond created by C# code.
-        public long LastMessageDt { get; set; }
+        public long LastMessageOrdinalNumber { get; set; }
 
         public DateTimeOffset CreatedAt { get; set; }
 
@@ -60,9 +57,8 @@
                 this.MessageInfo = JsonConvert.DeserializeObject<ParticipantMessageInfo>(messageInfoJson);
             }
 
-            this.MessageCount = reader.ReadColumn(nameof(this.MessageCount), reader.GetInt32);
-            this.MessageRead = reader.ReadColumn(nameof(this.MessageRead), reader.GetInt32);
-            this.LastMessageDt = reader.ReadColumn(nameof(this.LastMessageDt), reader.GetInt64);
+            this.LastReadOrdinalNumber = reader.ReadColumn("LastReadOn", reader.GetInt64);
+            this.LastMessageOrdinalNumber = reader.ReadColumn("LastMessageOn", reader.GetInt64);
             this.CreatedAt = reader.ReadDateColumn(nameof(this.CreatedAt));
             this.UpdatedAt = reader.ReadDateColumn(nameof(this.UpdatedAt));
             this.Version = reader.ReadColumn(nameof(this.Version), reader.GetInt32);
@@ -79,6 +75,9 @@
 
         [JsonProperty(PropertyName = "msg100")]
         public string MessageFirst100Chars { get; set; }
+
+        [JsonProperty(PropertyName = "msgts")]
+        public DateTimeOffset MessageCreatedAt { get; set; }
 
         [JsonProperty(PropertyName = "sender")]
         public AccountId SenderAccountId { get; set; }

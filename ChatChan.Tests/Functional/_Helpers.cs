@@ -18,13 +18,8 @@
         {
             string accountName = $"auth-account-{(int)(DateTime.UtcNow - new DateTime(1970, 1, 1)).TotalSeconds}";
 
-            // Create the account and parse response.
-            UserAccountViewModel response = ChatClient.CreateUserAccount(accountName, "Test Account for Auth");
+            UserAccountViewModel response = ChatClient.SetUserAccountPassword(accountName, "CHATCHAN_APP");
 
-            // Now set account password
-            response = ChatClient.SetUserAccountPassword(accountName, "CHATCHAN_APP");
-
-            // Logon.
             var token0 = ChatClient.LogonAccount(accountName, "CHATCHAN_APP");
 
             this.accountId = response.Id;

@@ -1,5 +1,6 @@
 ﻿namespace ChatChan.Service.Model
 {
+    using System;
     using System.Data;
     using System.Data.Common;
     using System.Threading.Tasks;
@@ -26,7 +27,9 @@
 
         public string MessageBody { get; set; }
 
-        public long MessageTsDt { get; set; }
+        public long OrdinalNumber { get; set; }
+
+        public DateTimeOffset CreatedAt { get; set; }
 
         public string GetFirst100MessageChars()
         {
@@ -69,7 +72,8 @@
             }
 
             this.MessageBody = reader.ReadColumn(nameof(this.MessageBody), reader.GetString);
-            this.MessageTsDt = reader.ReadColumn("MessageDt", reader.GetInt64);
+            this.OrdinalNumber = reader.ReadColumn(nameof(this.OrdinalNumber), reader.GetInt64);
+            this.CreatedAt = reader.ReadDateColumn(nameof(this.CreatedAt));
 
             return Task.FromResult(0);
         }

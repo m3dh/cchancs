@@ -1,7 +1,7 @@
 ﻿namespace ChatChan.Service.Identifier
 {
     using System;
-
+    using System.Collections.Generic;
     using Newtonsoft.Json;
 
     public class ChannelId
@@ -21,6 +21,22 @@
         public override string ToString()
         {
             return $"{this.Type.ToString()}:{this.Id}";
+        }
+
+        public override int GetHashCode()
+        {
+            var hashCode = -1324594315;
+            hashCode = hashCode * -1521134295 + Type.GetHashCode();
+            hashCode = hashCode * -1521134295 + Id.GetHashCode();
+            return hashCode;
+        }
+
+        public override bool Equals(object obj)
+        {
+            ChannelId id = obj as ChannelId;
+            return id != null &&
+                   Type == id.Type &&
+                   Id == id.Id;
         }
 
         public static bool TryParse(string input, out ChannelId channelId)
@@ -102,6 +118,22 @@
         {
             return $"{this.Type.ToString()}:{this.Name}";
         }
+
+        public override bool Equals(object obj)
+        {
+            var id = obj as AccountId;
+            return id != null &&
+                   this.Type == id.Type &&
+                   string.Equals(this.Name, id.Name, StringComparison.Ordinal);
+        }
+
+        public override int GetHashCode()
+        {
+            var hashCode = -1979447941;
+            hashCode = hashCode * -1521134295 + this.Type.GetHashCode();
+            hashCode = hashCode * -1521134295 + EqualityComparer<string>.Default.GetHashCode(this.Name);
+            return hashCode;
+        }
     }
 
     public class ImageId
@@ -153,6 +185,22 @@
         public override string ToString()
         {
             return $"{this.Type.ToString()}:{this.Guid:N}";
+        }
+
+        public override bool Equals(object obj)
+        {
+            var id = obj as ImageId;
+            return id != null &&
+                   Type == id.Type &&
+                   Guid.Equals(id.Guid);
+        }
+
+        public override int GetHashCode()
+        {
+            var hashCode = 652959137;
+            hashCode = hashCode * -1521134295 + Type.GetHashCode();
+            hashCode = hashCode * -1521134295 + EqualityComparer<Guid>.Default.GetHashCode(Guid);
+            return hashCode;
         }
     }
 }

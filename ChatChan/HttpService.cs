@@ -11,7 +11,6 @@
     using Microsoft.Extensions.Options;
 
     using Newtonsoft.Json;
-    using Microsoft.AspNetCore.Mvc.Formatters;
 
     public class HttpService
     {

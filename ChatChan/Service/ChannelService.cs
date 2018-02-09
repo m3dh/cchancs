@@ -71,7 +71,7 @@
                 throw new ArgumentNullException(nameof(target));
             }
 
-            if (string.Equals(source.ToString(), target.ToString(), StringComparison.Ordinal))
+            if (source.Equals(target))
             {
                 throw new BadRequest("Cannot create direct message for the same account.");
             }

@@ -3,16 +3,19 @@
     using System;
     using System.Collections.Generic;
     using System.Linq;
-    using System.Threading;
+
     using ChatChan.Common.Configuration;
     using ChatChan.Provider;
     using ChatChan.Provider.Partition;
     using ChatChan.Service;
     using ChatChan.Service.Identifier;
     using ChatChan.Service.Model;
+
     using Microsoft.Extensions.Logging;
     using Microsoft.Extensions.Options;
+
     using NSubstitute;
+
     using Xunit;
 
     public class ParticipantSvcTests
@@ -67,7 +70,7 @@
             bool result = service.UpdateParticipantWithNewMessage(account0, channel0, new Message
             {
                 MessageBody = "Lorum ipsum",
-                MessageTsDt = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(),
+                OrdinalNumber = 1,
                 Uuid = Guid.NewGuid().ToString("N"),
                 SenderAccountId = account1
             }).Result;
@@ -75,17 +78,15 @@
             Assert.True(result);
 
             // Fetch with zero time.
-            IList<Participant> parts = service.ListAccountParticipantsWithMessageInfo(account0, 0).Result;
+            IList<Participant> parts = service.ListAccountParticipantsWithMessageInfo(account0, DateTimeOffset.MinValue).Result;
             Assert.Equal(1, parts.Count);
-            Assert.Equal(0, parts[0].MessageRead);
-            Assert.Equal(1, parts[0].MessageCount);
+            Assert.Equal(0, parts[0].LastReadOrdinalNumber);
+            Assert.Equal(1, parts[0].LastMessageOrdinalNumber);
             Assert.Equal("Lorum ipsum", parts[0].MessageInfo.MessageFirst100Chars);
             Assert.Equal(account1.ToString(), parts[0].MessageInfo.SenderAccountId.ToString());
-            Assert.True(parts[0].LastMessageDt > 0);
-            long lastMsgDt = parts[0].LastMessageDt;
+            DateTimeOffset lastUpdateDt = parts[0].UpdatedAt;
 
             // Send another message
-            Thread.Sleep(1);
             ChannelId channel1 = new ChannelId
             {
                 Id = 99,
@@ -95,37 +96,37 @@
             result = service.UpdateParticipantWithNewMessage(account0, channel1, new Message
             {
                 MessageBody = "group message",
-                MessageTsDt = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(),
+                OrdinalNumber = 1,
                 Uuid = Guid.NewGuid().ToString("N"),
                 SenderAccountId = account1
             }).Result;
 
             Assert.True(result);
-            parts = service.ListAccountParticipantsWithMessageInfo(account0, 0).Result;
+            parts = service.ListAccountParticipantsWithMessageInfo(account0, DateTimeOffset.MinValue).Result;
             Assert.Equal(2, parts.Count);
 
-            parts = service.ListAccountParticipantsWithMessageInfo(account0, lastMsgDt).Result;
+            parts = service.ListAccountParticipantsWithMessageInfo(account0, lastUpdateDt).Result;
             Assert.Equal(1, parts.Count);
-            Assert.Equal(0, parts[0].MessageRead);
-            Assert.Equal(1, parts[0].MessageCount);
+            Assert.Equal(0, parts[0].LastReadOrdinalNumber);
+            Assert.Equal(1, parts[0].LastMessageOrdinalNumber);
             Assert.Equal("group message", parts[0].MessageInfo.MessageFirst100Chars);
             Assert.Equal(account1.ToString(), parts[0].MessageInfo.SenderAccountId.ToString());
-            lastMsgDt = parts[0].LastMessageDt;
+            lastUpdateDt = parts[0].UpdatedAt;
 
             // Append one new message.
             result = service.UpdateParticipantWithNewMessage(account0, channel0, new Message
             {
                 MessageBody = "Lorum ipsum 1",
-                MessageTsDt = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(),
+                OrdinalNumber = 3,
                 Uuid = Guid.NewGuid().ToString("N"),
                 SenderAccountId = account1
             }).Result;
 
             Assert.True(result);
-            parts = service.ListAccountParticipantsWithMessageInfo(account0, lastMsgDt).Result;
+            parts = service.ListAccountParticipantsWithMessageInfo(account0, lastUpdateDt).Result;
             Assert.Equal(1, parts.Count);
-            Assert.Equal(0, parts[0].MessageRead);
-            Assert.Equal(2, parts[0].MessageCount);
+            Assert.Equal(0, parts[0].LastReadOrdinalNumber);
+            Assert.Equal(3, parts[0].LastMessageOrdinalNumber);
             Assert.Equal("Lorum ipsum 1", parts[0].MessageInfo.MessageFirst100Chars);
             Assert.Equal(account1.ToString(), parts[0].MessageInfo.SenderAccountId.ToString());
 
@@ -133,22 +134,22 @@
             result = service.UpdateParticipantWithNewMessage(account0, channel0, new Message
             {
                 MessageBody = "Useless message",
-                MessageTsDt = DateTimeOffset.UtcNow.AddMinutes(-10).ToUnixTimeMilliseconds(),
+                OrdinalNumber = 2,
                 Uuid = Guid.NewGuid().ToString("N"),
                 SenderAccountId = account1,
             }).Result;
             Assert.True(result);
-            parts = service.ListAccountParticipantsWithMessageInfo(account0, lastMsgDt).Result;
+            parts = service.ListAccountParticipantsWithMessageInfo(account0, lastUpdateDt).Result;
             Assert.Equal(1, parts.Count);
-            Assert.Equal(0, parts[0].MessageRead);
-            Assert.Equal(3, parts[0].MessageCount);
+            Assert.Equal(0, parts[0].LastReadOrdinalNumber);
+            Assert.Equal(3, parts[0].LastMessageOrdinalNumber);
             Assert.Equal("Lorum ipsum 1", parts[0].MessageInfo.MessageFirst100Chars);
             Assert.Equal(account1.ToString(), parts[0].MessageInfo.SenderAccountId.ToString());
 
             // Update read count.
-            Assert.True(service.UpdateParticipantLastReadMessageCount(account0, channel0, parts[0].MessageCount).Result);
-            parts = service.ListAccountParticipantsWithMessageInfo(account0, lastMsgDt).Result;
-            Assert.Equal(3, parts[0].MessageRead);
+            Assert.True(service.UpdateParticipantLastReadMessageOrdinal(account0, channel0, parts[0].LastMessageOrdinalNumber).Result);
+            parts = service.ListAccountParticipantsWithMessageInfo(account0, lastUpdateDt).Result;
+            Assert.Equal(3, parts[0].LastReadOrdinalNumber);
         }
 
         public static IParticipantService GetParticipantService()

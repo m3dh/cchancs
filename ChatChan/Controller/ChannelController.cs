@@ -42,11 +42,14 @@
         [JsonProperty(PropertyName = "type")]
         public string MessageType { get; set; }
 
-        [JsonProperty(PropertyName = "message_dt")]
-        public long MessageDt { get; set; }
+        [JsonProperty(PropertyName = "message_at")]
+        public DateTimeOffset MessageSentAt { get; set; }
 
         [JsonProperty(PropertyName = "message_body")]
         public string MessageBody { get; set; }
+
+        [JsonProperty(PropertyName = "ordinal")]
+        public long OrdinalNumber { get; set; }
 
         [JsonProperty(PropertyName = "sender_id")]
         public string SenderAccountId { get; set; }
@@ -86,7 +89,31 @@
             this.limitations = limitations?.Value ?? throw new ArgumentNullException(nameof(limitations));
         }
 
-        #region Pure Channel APIs
+        [HttpGet, Route("api/channels/{channelId}")]
+        public async Task<GeneralChannelViewModel> GetChannelById(string channelId)
+        {
+            if (string.IsNullOrEmpty(channelId) || !ChannelId.TryParse(channelId, out ChannelId channelIdObj))
+            {
+                throw new BadRequest("Channel ID is null or invalid.", nameof(channelId));
+            }
+
+            AccountId authAccount = this.GetAuthAccount();
+            ChannelMemberList memberList = await this.channelService.GetChannelMembers(channelIdObj);
+            if (!memberList.MemberList.Any(act => act.Equals(authAccount)))
+            {
+                throw new NotAllowed("Cannot read message from a channel that current account is not in.");
+            }
+
+            Channel channel = await this.channelService.GetChannel(channelIdObj);
+            return new GeneralChannelViewModel
+            {
+                DisplayName = channel.DisplayName,
+                ChannelId = channel.ChannelId.ToString(),
+                CreatedAt = channel.CreatedAt,
+                LinkId = 0,
+            };
+        }
+
         [HttpGet, Route("api/channels")]
         public async Task<GeneralChannelViewModel[]> GetChannelsByAccountId([FromQuery] string accountId)
         {
@@ -95,16 +122,16 @@
                 throw new BadRequest("Unexpected query");
             }
 
-            if (string.IsNullOrEmpty(accountId) || !AccountId.TryParse(accountId, out AccountId accountIdObj))
+            if (!AccountId.TryParse(accountId, out AccountId accountIdObj))
             {
-                throw new BadRequest(nameof(accountId), accountId);
+                accountIdObj = new AccountId { Type = AccountId.AccountType.UA, Name = accountId };
             }
 
             IList<Channel> channels = await this.channelService.GetChannels(accountIdObj);
             return channels.Select(c => new GeneralChannelViewModel
             {
                 DisplayName = c.DisplayName,
-                ChannelId = c.Id.ToString(),
+                ChannelId = c.ChannelId.ToString(),
                 CreatedAt = c.CreatedAt,
                 LinkId = 0,
             }).ToArray();
@@ -143,9 +170,7 @@
                 ChannelId = chanId.ToString()
             };
         }
-        #endregion
 
-        #region Message & Participant APIs
         [HttpGet, Route("api/channels/{channelId}/messages")]
         public async Task<GeneralMessageViewModel[]> GetChannelMessages(string channelId, [FromQuery]long lastMsgDt)
         {
@@ -154,14 +179,22 @@
                 throw new BadRequest("Channel ID is null or invalid.", nameof(channelId));
             }
 
+            AccountId authAccount = this.GetAuthAccount();
+            ChannelMemberList memberList = await this.channelService.GetChannelMembers(channelIdObj);
+            if(!memberList.MemberList.Any(act => act.Equals(authAccount)))
+            {
+                throw new NotAllowed("Cannot read message from a channel that current account is not in.");
+            }
+
             IList<Message> msgs = await this.messageService.ListMessages(channelIdObj, lastMsgDt, this.limitations.MaxReturnedMessagesInOneQuery);
             return msgs
                 .Select(m => new GeneralMessageViewModel
                 {
                     MessageType = m.Type.ToString(),
-                    MessageDt = m.MessageTsDt,
+                    MessageSentAt = m.CreatedAt,
                     MessageBody = m.MessageBody,
-                    SenderAccountId = m.SenderAccountId.ToString()
+                    SenderAccountId = m.SenderAccountId.ToString(),
+                    OrdinalNumber = m.OrdinalNumber,
                 })
                 .ToArray();
         }
@@ -194,15 +227,22 @@
                 throw new BadRequest($"Allowed message length : (0-{this.limitations.AllowedTextMessageLength}]");
             }
 
+            AccountId authAccount = this.GetAuthAccount();
+            ChannelMemberList memberList = await this.channelService.GetChannelMembers(channelIdObj);
+            if (!memberList.MemberList.Any(act => act.Equals(authAccount)))
+            {
+                throw new NotAllowed("Cannot send message to a channel that current account is not in.");
+            }
+
             Message msg = await this.messageService.CreateMessage(channelIdObj, senderActId, MessageType.Text, msgUuid.ToString("N"), messageInput.Message);
             return new GeneralMessageViewModel
             {
                 MessageType = msg.Type.ToString(),
-                MessageDt = msg.MessageTsDt,
+                MessageSentAt = msg.CreatedAt,
                 MessageBody = msg.MessageBody,
                 SenderAccountId = msg.SenderAccountId.ToString(),
+                OrdinalNumber = msg.OrdinalNumber,
             };
         }
-        #endregion
     }
 }
