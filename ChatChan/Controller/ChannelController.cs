@@ -7,6 +7,7 @@
 
     using ChatChan.Common;
     using ChatChan.Common.Configuration;
+    using ChatChan.Middleware;
     using ChatChan.Service;
     using ChatChan.Service.Identifier;
     using ChatChan.Service.Model;
@@ -63,33 +64,40 @@
         [JsonProperty(PropertyName = "channel_id")]
         public string ChannelId { get; set; }
 
-        [JsonProperty(PropertyName = "link_id")]
-        public int LinkId { get; set; }
-
         [JsonProperty(PropertyName = "created_at")]
         public DateTimeOffset CreatedAt { get; set; }
+
+        [JsonProperty(PropertyName = "members")]
+        public List<string> Members { get; set; }
     }
 
     public class ChannelController : ControllerBase
     {
         private readonly IChannelService channelService;
+        private readonly IAccountService accountService;
         private readonly IParticipantService participantService;
         private readonly IMessageService messageService;
+        private readonly IQueueService queueService;
         private readonly LimitationsSection limitations;
 
         public ChannelController(
             IChannelService channelService,
+            IAccountService accountService,
             IParticipantService participantService,
             IMessageService messageService,
+            IQueueService queueService,
             IOptions<LimitationsSection> limitations)
         {
             this.channelService = channelService ?? throw new ArgumentNullException(nameof(channelService));
+            this.accountService = accountService ?? throw new ArgumentNullException(nameof(accountService));
             this.participantService = participantService ?? throw new ArgumentNullException(nameof(participantService));
             this.messageService = messageService ?? throw new ArgumentNullException(nameof(messageService));
+            this.queueService = queueService ?? throw new ArgumentNullException(nameof(queueService));
             this.limitations = limitations?.Value ?? throw new ArgumentNullException(nameof(limitations));
         }
 
         [HttpGet, Route("api/channels/{channelId}")]
+        [ServiceFilter(typeof(TokenAuthActionFilter))]
         public async Task<GeneralChannelViewModel> GetChannelById(string channelId)
         {
             if (string.IsNullOrEmpty(channelId) || !ChannelId.TryParse(channelId, out ChannelId channelIdObj))
@@ -110,11 +118,12 @@
                 DisplayName = channel.DisplayName,
                 ChannelId = channel.ChannelId.ToString(),
                 CreatedAt = channel.CreatedAt,
-                LinkId = 0,
+                Members = memberList.MemberList.Select(m => m.ToString()).ToList()
             };
         }
 
         [HttpGet, Route("api/channels")]
+        [ServiceFilter(typeof(TokenAuthActionFilter))]
         public async Task<GeneralChannelViewModel[]> GetChannelsByAccountId([FromQuery] string accountId)
         {
             if (string.IsNullOrEmpty(accountId))
@@ -133,11 +142,11 @@
                 DisplayName = c.DisplayName,
                 ChannelId = c.ChannelId.ToString(),
                 CreatedAt = c.CreatedAt,
-                LinkId = 0,
             }).ToArray();
         }
 
         [HttpPost, Route("api/channels/dms")]
+        [ServiceFilter(typeof(TokenAuthActionFilter))]
         public async Task<GeneralChannelViewModel> CreateDirectMessageChannel([FromBody] DirectMessageChannelInputModel input)
         {
             if (input == null)
@@ -160,11 +169,16 @@
                 throw new Forbidden("Creating channel on behalf of another account is not allowed.");
             }
 
+            UserAccount targetAccount = await this.accountService.GetUserAccount(targetAcctId);
+            if (targetAccount == null || string.IsNullOrEmpty(targetAccount.AccountName))
+            {
+                throw new Forbidden($"Target account {targetAcctId} is not found.");
+            }
+
             ChannelId chanId = await this.channelService.CreateDirectMessageChannel(sourceAcctId, targetAcctId, string.Empty);
-            int linkId = await this.participantService.LinkAccountWithChannel(sourceAcctId, chanId);
+            await this.participantService.LinkAccountWithChannel(sourceAcctId, chanId);
             return new GeneralChannelViewModel
             {
-                LinkId = linkId,
                 DisplayName = string.Empty,
                 CreatedAt = DateTimeOffset.UtcNow,
                 ChannelId = chanId.ToString()
@@ -172,7 +186,8 @@
         }
 
         [HttpGet, Route("api/channels/{channelId}/messages")]
-        public async Task<GeneralMessageViewModel[]> GetChannelMessages(string channelId, [FromQuery]long lastMsgDt)
+        [ServiceFilter(typeof(TokenAuthActionFilter))]
+        public async Task<GeneralMessageViewModel[]> GetChannelMessages(string channelId, [FromQuery]long lastMsgOrdinalNumber)
         {
             if (string.IsNullOrEmpty(channelId) || !ChannelId.TryParse(channelId, out ChannelId channelIdObj))
             {
@@ -186,7 +201,7 @@
                 throw new NotAllowed("Cannot read message from a channel that current account is not in.");
             }
 
-            IList<Message> msgs = await this.messageService.ListMessages(channelIdObj, lastMsgDt, this.limitations.MaxReturnedMessagesInOneQuery);
+            IList<Message> msgs = await this.messageService.ListMessages(channelIdObj, lastMsgOrdinalNumber, this.limitations.MaxReturnedMessagesInOneQuery);
             return msgs
                 .Select(m => new GeneralMessageViewModel
                 {
@@ -199,7 +214,8 @@
                 .ToArray();
         }
 
-        [HttpPost, Route("api/channels/{channelId}/messages")]
+        [HttpPost, Route("api/channels/{channelId}/textMessages")]
+        [ServiceFilter(typeof(TokenAuthActionFilter))]
         public async Task<GeneralMessageViewModel> PostTextMessageInChannel(string channelId, [FromBody] PostTextMessageInputModel messageInput)
         {
             if (string.IsNullOrEmpty(channelId) || !ChannelId.TryParse(channelId, out ChannelId channelIdObj))
@@ -227,6 +243,11 @@
                 throw new BadRequest($"Allowed message length : (0-{this.limitations.AllowedTextMessageLength}]");
             }
 
+            if (!this.IsAuthAccount(senderActId))
+            {
+                throw new NotAllowed("Cannot send message on behalf of others.");
+            }
+
             AccountId authAccount = this.GetAuthAccount();
             ChannelMemberList memberList = await this.channelService.GetChannelMembers(channelIdObj);
             if (!memberList.MemberList.Any(act => act.Equals(authAccount)))
@@ -235,6 +256,8 @@
             }
 
             Message msg = await this.messageService.CreateMessage(channelIdObj, senderActId, MessageType.Text, msgUuid.ToString("N"), messageInput.Message);
+            await this.queueService.SendChatMessage(msg.Uuid, channelIdObj);
+            await this.participantService.UpdateParticipantWithNewMessage(senderActId, channelIdObj, msg);
             return new GeneralMessageViewModel
             {
                 MessageType = msg.Type.ToString(),

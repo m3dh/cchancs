@@ -17,6 +17,7 @@
     {
         Task<Message> CreateMessage(ChannelId channelId, AccountId senderId, MessageType type, string uuid, string body);
         Task<IList<Message>> ListMessages(ChannelId channelId, long lastMsgOrdinal, int selection = 150);
+        Task<Message> GetMessage(ChannelId channelId, string uuid);
     }
 
     public class MessageService : IMessageService

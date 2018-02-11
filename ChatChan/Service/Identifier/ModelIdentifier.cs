@@ -26,15 +26,14 @@
         public override int GetHashCode()
         {
             var hashCode = -1324594315;
-            hashCode = hashCode * -1521134295 + Type.GetHashCode();
-            hashCode = hashCode * -1521134295 + Id.GetHashCode();
+            hashCode = hashCode * -1521134295 + this.Type.GetHashCode();
+            hashCode = hashCode * -1521134295 + this.Id.GetHashCode();
             return hashCode;
         }
 
         public override bool Equals(object obj)
         {
-            ChannelId id = obj as ChannelId;
-            return id != null &&
+            return obj is ChannelId id &&
                    Type == id.Type &&
                    Id == id.Id;
         }
@@ -121,8 +120,7 @@
 
         public override bool Equals(object obj)
         {
-            var id = obj as AccountId;
-            return id != null &&
+            return obj is AccountId id &&
                    this.Type == id.Type &&
                    string.Equals(this.Name, id.Name, StringComparison.Ordinal);
         }
@@ -189,17 +187,14 @@
 
         public override bool Equals(object obj)
         {
-            var id = obj as ImageId;
-            return id != null &&
-                   Type == id.Type &&
-                   Guid.Equals(id.Guid);
+            return obj is ImageId id && this.Type == id.Type && this.Guid.Equals(id.Guid);
         }
 
         public override int GetHashCode()
         {
             var hashCode = 652959137;
-            hashCode = hashCode * -1521134295 + Type.GetHashCode();
-            hashCode = hashCode * -1521134295 + EqualityComparer<Guid>.Default.GetHashCode(Guid);
+            hashCode = hashCode * -1521134295 + this.Type.GetHashCode();
+            hashCode = hashCode * -1521134295 + EqualityComparer<Guid>.Default.GetHashCode(this.Guid);
             return hashCode;
         }
     }

@@ -7,6 +7,7 @@
 
     using ChatChan.Common;
     using ChatChan.Common.Configuration;
+    using ChatChan.Middleware;
     using ChatChan.Service;
     using ChatChan.Service.Identifier;
     using ChatChan.Service.Model;
@@ -57,6 +58,7 @@
         }
 
         [HttpGet, Route("api/participants")]
+        [ServiceFilter(typeof(TokenAuthActionFilter))]
         public async Task<ParticipantViewModel[]> GetParticipantsByAccountId([FromQuery] string accountId, [FromQuery]long prevUpdatedDt)
         {
             if (string.IsNullOrEmpty(accountId))

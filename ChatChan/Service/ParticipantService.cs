@@ -163,11 +163,6 @@
                 throw new ArgumentNullException(nameof(message));
             }
 
-            if (string.Equals(message.SenderAccountId.Name, accountId.Name, StringComparison.OrdinalIgnoreCase))
-            {
-                throw new InvalidOperationException("Sending message to the same account is not allowed.");
-            }
-
             ParticipantMessageInfo messageInfo = new ParticipantMessageInfo
             {
                 MessageFirst100Chars = message.GetFirst100MessageChars(),

@@ -1,6 +1,7 @@
 ﻿namespace ChatChan.Tests.Functional
 {
     using System;
+    using System.Collections.Generic;
     using System.Net;
     using System.Net.Http;
     using System.Net.Http.Headers;
@@ -15,7 +16,7 @@
     public class ChatClient
     {
         private static readonly HttpClient HttpClient = new HttpClient();
-        private readonly string accountId;
+        public readonly string AccountId;
         private readonly string token;
         private readonly int deviceId;
 
@@ -70,16 +71,85 @@
             return token0;
         }
 
-        public ChatClient(string accountName, DeviceTokenViewModel token)
+        public ChatClient(string accountId, DeviceTokenViewModel token)
         {
-            this.accountId = accountName;
+            this.AccountId = accountId;
             this.deviceId = token.DeviceId;
             this.token = token.Token;
         }
 
+        public GeneralChannelViewModel CreateDirectMessageChannel(string secondAccountId)
+        {
+            DirectMessageChannelInputModel request = new DirectMessageChannelInputModel
+            {
+                SourceAccountId = this.AccountId,
+                TargetAccountId = secondAccountId,
+            };
+
+            return this.Post<GeneralChannelViewModel>("http://localhost:8080/api/channels/dms", request);
+        }
+
+        public List<GeneralChannelViewModel> ListMyChannels()
+        {
+            return this.Get<List<GeneralChannelViewModel>>($"http://localhost:8080/api/channels?accounId={this.AccountId}");
+        }
+
+        public GeneralChannelViewModel GetChannel(string channelId)
+        {
+            return this.Get<GeneralChannelViewModel>($"http://localhost:8080/api/channels/{channelId}");
+        }
+
+        public GeneralMessageViewModel PostNewChannelMessage(string channelId)
+        {
+            PostTextMessageInputModel input = new PostTextMessageInputModel
+            {
+                Message = $"Some text message @ {DateTimeOffset.UtcNow:F}",
+                SenderAccountId = this.AccountId,
+                Uuid = Guid.NewGuid().ToString("N")
+            };
+
+            return this.Post<GeneralMessageViewModel>($"http://localhost:8080/api/channels/{channelId}/textMessages", input);
+        }
+
+        public List<GeneralMessageViewModel> ListMessagesByChannel(string channelId, long lastMsgOrdinalNumber = 0)
+        {
+            return this.Get<List<GeneralMessageViewModel>>($"http://localhost:8080/api/channels/{channelId}/messages?lastMsgOrdinalNumber={lastMsgOrdinalNumber}");
+        }
+
+        public List<ParticipantViewModel> ListMyParticipants(long prevUpdatedDt)
+        {
+            return this.Get<List<ParticipantViewModel>>($"http://localhost:8080/api/participants?prevUpdatedDt={prevUpdatedDt}&accountId={this.AccountId}");
+        }
+
+        private TRet Get<TRet>(string url)
+        {
+            HttpRequestMessage req = new HttpRequestMessage(HttpMethod.Get, url);
+            this.AuthHeaders(req.Headers);
+
+            HttpResponseMessage resp = HttpClient.SendAsync(req).Result;
+            string respString = resp.Content.ReadAsStringAsync().Result;
+            Assert.Equal(HttpStatusCode.OK, resp.StatusCode);
+            return JsonConvert.DeserializeObject<TRet>(respString);
+        }
+
+        private TRet Post<TRet>(string url, object body)
+        {
+            HttpRequestMessage req = new HttpRequestMessage(HttpMethod.Post, url)
+            {
+                Content = new StringContent(JsonConvert.SerializeObject(body)),
+            };
+
+            req.Content.Headers.ContentType = new MediaTypeHeaderValue("application/json") { CharSet = "utf-8" };
+            this.AuthHeaders(req.Content.Headers);
+            HttpResponseMessage resp = HttpClient.SendAsync(req).Result;
+            string respString = resp.Content.ReadAsStringAsync().Result;
+            Assert.Equal(HttpStatusCode.Created, resp.StatusCode);
+            return JsonConvert.DeserializeObject<TRet>(respString);
+        }
+
         private void AuthHeaders(HttpHeaders headers)
         {
-            headers.Add(Constants.UserHeaderName, new[] { this.accountId });
+            headers.Add(Constants.UserHeaderName, new[] { this.AccountId });
             headers.Add(Constants.TokenHeaderName, new[] { $"{this.deviceId}:{this.token}" });
         }
     }

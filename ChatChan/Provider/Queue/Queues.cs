@@ -43,7 +43,7 @@
 
             public ChatAppQueueEventTypes DataType { get; private set; }
 
-            public int Version { get; private set; }
+            public int Version { get; set; }
 
             public Task Fill(DbDataReader reader)
             {
@@ -96,6 +96,7 @@
 
                 if (affected >= 1)
                 {
+                    queueEvent.Version++;
                     return queueEvent;
                 }
 
@@ -122,6 +123,8 @@
                 {
                     throw new DataException($"Unable to delete queue event {dbEvent.Id}");
                 }
+
+                this.logger.LogDebug("Queue event {0} is removed.", dbEvent.Id);
             }
             else
             {

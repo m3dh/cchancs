@@ -1,6 +1,8 @@
 ﻿namespace ChatChan.Provider
 {
     using System;
+    using System.Collections.Generic;
+    using System.Linq;
     using System.Threading.Tasks;
 
     using ChatChan.Common;
@@ -25,9 +27,10 @@
         }
     }
 
-    public class MessageQueueProvider : IMessageQueue
+    public class MessageQueueProvider
     {
         private readonly IMessageQueue innerQueue;
+        private static readonly Dictionary<string, TaskCompletionSource<bool>> LocalReadiness = new Dictionary<string, TaskCompletionSource<bool>>();
 
         public MessageQueueProvider(CoreDbProvider coreDb, ILoggerFactory loggerFactory, IOptions<StorageSection> storageSection)
         {
@@ -52,14 +55,34 @@
             return this.innerQueue.Pop();
         }
 
+        public Task<bool> GetLocalReadiness(string threadSignature)
+        {
+            lock (LocalReadiness)
+            {
+                if (!LocalReadiness.TryGetValue(threadSignature, out TaskCompletionSource<bool> completionSource)
+                    || completionSource.Task.IsCompleted)
+                {
+                    completionSource = new TaskCompletionSource<bool>();
+                    LocalReadiness[threadSignature] = completionSource;
+                }
+
+                return completionSource.Task;
+            }
+        }
+
         public Task Dequeue(IQueueEvent queueEvent)
         {
             return this.innerQueue.Dequeue(queueEvent);
         }
 
-        public Task PushOne(int eventType, string eventData)
+        public async Task PushOne(int eventType, string eventData)
         {
-            return this.innerQueue.PushOne(eventType, eventData);
+            await this.innerQueue.PushOne(eventType, eventData);
+            lock (LocalReadiness)
+            {
+                TaskCompletionSource<bool> completionSource = LocalReadiness.Values.FirstOrDefault(c => !c.Task.IsCompleted);
+                completionSource?.TrySetResult(true);
+            }
         }
     }
 

@@ -67,7 +67,7 @@
                 // Providers
                 .AddSingleton<CoreDbProvider>()
                 .AddSingleton<IDataPartitionProvider, DataPartitionsManager>()
-                .AddSingleton<IMessageQueue, MessageQueueProvider>()
+                .AddSingleton<MessageQueueProvider>()
 
                 // Entity services
                 .AddSingleton<IImageService, ImageService>()
