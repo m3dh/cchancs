@@ -30,7 +30,7 @@
                     Password = Convert.ToBase64String(Encoding.UTF8.GetBytes("CHATCHAN_APP")),
                 };
 
-                HttpRequestMessage req = new HttpRequestMessage(new HttpMethod("POST"), $"http://localhost:8080/api/accounts/users/{accountName}/password");
+                HttpRequestMessage req = new HttpRequestMessage(new HttpMethod("POST"), $"{GlobalHelper.TestServer}/api/accounts/users/{accountName}/password");
                 req.Content = new StringContent(JsonConvert.SerializeObject(request));
                 req.Content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
                 req.Content.Headers.ContentType.CharSet = "utf-8";
@@ -38,7 +38,7 @@
                 Assert.Equal(HttpStatusCode.Created, resp.StatusCode);
 
                 // Now try to auth.
-                HttpRequestMessage req0 = new HttpRequestMessage(new HttpMethod("POST"), $"http://localhost:8080/api/accounts/users/{accountName}/tokens");
+                HttpRequestMessage req0 = new HttpRequestMessage(new HttpMethod("POST"), $"{GlobalHelper.TestServer}/api/accounts/users/{accountName}/tokens");
                 req0.Content = new StringContent(JsonConvert.SerializeObject(request)); // reuse the request
                 req0.Content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
                 req0.Content.Headers.ContentType.CharSet = "utf-8";
@@ -49,7 +49,7 @@
                 Assert.Equal(1, token0.DeviceId);
 
                 // If we auth once again without device
-                HttpRequestMessage req1 = new HttpRequestMessage(new HttpMethod("POST"), $"http://localhost:8080/api/accounts/users/{accountName}/tokens");
+                HttpRequestMessage req1 = new HttpRequestMessage(new HttpMethod("POST"), $"{GlobalHelper.TestServer}/api/accounts/users/{accountName}/tokens");
                 req1.Content = new StringContent(JsonConvert.SerializeObject(request)); // reuse the request
                 req1.Content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
                 req1.Content.Headers.ContentType.CharSet = "utf-8";
@@ -60,7 +60,7 @@
                 Assert.Equal(2, token1.DeviceId);
 
                 // Refresh the eldest one.
-                HttpRequestMessage req2 = new HttpRequestMessage(new HttpMethod("POST"), $"http://localhost:8080/api/accounts/users/{accountName}/tokens");
+                HttpRequestMessage req2 = new HttpRequestMessage(new HttpMethod("POST"), $"{GlobalHelper.TestServer}/api/accounts/users/{accountName}/tokens");
                 req2.Content = new StringContent(JsonConvert.SerializeObject(request)); // reuse the request
                 req2.Content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
                 req2.Content.Headers.ContentType.CharSet = "utf-8";
@@ -73,7 +73,7 @@
                 Assert.NotEqual(token0.ExpireAt, token2.ExpireAt);
 
                 // Try fetch the second token again.
-                HttpRequestMessage req3 = new HttpRequestMessage(new HttpMethod("POST"), $"http://localhost:8080/api/accounts/users/{accountName}/tokens?device_id=2");
+                HttpRequestMessage req3 = new HttpRequestMessage(new HttpMethod("POST"), $"{GlobalHelper.TestServer}/api/accounts/users/{accountName}/tokens?device_id=2");
                 req3.Content = new StringContent(JsonConvert.SerializeObject(request)); // reuse the request
                 req3.Content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
                 req3.Content.Headers.ContentType.CharSet = "utf-8";
@@ -97,7 +97,7 @@
                     Password = Convert.ToBase64String(Encoding.UTF8.GetBytes("CHATCHAN_APP")),
                 };
 
-                HttpRequestMessage req = new HttpRequestMessage(new HttpMethod("POST"), $"http://localhost:8080/api/accounts/users/{accountName}/password");
+                HttpRequestMessage req = new HttpRequestMessage(new HttpMethod("POST"), $"{GlobalHelper.TestServer}/api/accounts/users/{accountName}/password");
                 req.Content = new StringContent(JsonConvert.SerializeObject(request));
                 req.Content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
                 req.Content.Headers.ContentType.CharSet = "utf-8";
@@ -105,7 +105,7 @@
                 Assert.Equal(HttpStatusCode.Created, resp.StatusCode);
 
                 // Now try to auth.
-                HttpRequestMessage req0 = new HttpRequestMessage(new HttpMethod("POST"), $"http://localhost:8080/api/accounts/users/{accountName}/tokens");
+                HttpRequestMessage req0 = new HttpRequestMessage(new HttpMethod("POST"), $"{GlobalHelper.TestServer}/api/accounts/users/{accountName}/tokens");
                 req0.Content = new StringContent(JsonConvert.SerializeObject(request)); // reuse the request
                 req0.Content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
                 req0.Content.Headers.ContentType.CharSet = "utf-8";
@@ -120,14 +120,14 @@
                     DisplayName = "Account Display Name 🥃",
                 };
 
-                req = new HttpRequestMessage(new HttpMethod("PATCH"), $"http://localhost:8080/api/accounts/users/{accountName}");
+                req = new HttpRequestMessage(new HttpMethod("PATCH"), $"{GlobalHelper.TestServer}/api/accounts/users/{accountName}");
                 req.Content = new StringContent(JsonConvert.SerializeObject(request));
                 req.Content.Headers.ContentType = new MediaTypeHeaderValue("application/json") { CharSet = "utf-8" };
                 (new ChatAppAuthProvider($"UA:{accountName}", token0.DeviceId, token0.Token)).AuthIt(req.Content.Headers);
                 resp = client.SendAsync(req).Result;
                 Assert.Equal(HttpStatusCode.OK, resp.StatusCode);
 
-                HttpRequestMessage reqMsg = new HttpRequestMessage(HttpMethod.Get, $"http://localhost:8080/api/accounts/users/{accountName}");
+                HttpRequestMessage reqMsg = new HttpRequestMessage(HttpMethod.Get, $"{GlobalHelper.TestServer}/api/accounts/users/{accountName}");
                 ChatAppAuthProvider.Instace.AuthIt(reqMsg.Headers); // Auth request
                 resp = client.SendAsync(reqMsg).Result;
                 var response = JsonConvert.DeserializeObject<UserAccountViewModel>(resp.Content.ReadAsStringAsync().Result);
@@ -152,19 +152,20 @@
 
                 HttpContent content = new StringContent(JsonConvert.SerializeObject(request));
                 content.Headers.ContentType = new MediaTypeHeaderValue("application/json") { CharSet = "utf-8" };
-                HttpResponseMessage resp = client.PostAsync("https://cchanapi0.azurewebsites.net/api/accounts/users", content).Result;
-                var oup = resp.Content.ReadAsStringAsync().Result;
+                HttpResponseMessage resp = client.PostAsync($"{GlobalHelper.TestServer}/api/accounts/users", content).Result;
+                var responseString = resp.Content.ReadAsStringAsync().Result;
                 Assert.Equal(HttpStatusCode.Created, resp.StatusCode);
-                UserAccountViewModel response = JsonConvert.DeserializeObject<UserAccountViewModel>(resp.Content.ReadAsStringAsync().Result);
+                UserAccountViewModel response = JsonConvert.DeserializeObject<UserAccountViewModel>(responseString);
                 Assert.Equal($"UA:{accountName}", response.Id);
                 Assert.Equal(request.DisplayName, response.DisplayName);
 
                 // Retreive the account back.
-                HttpRequestMessage reqMsg = new HttpRequestMessage(HttpMethod.Get, $"http://localhost:8080/api/accounts/users/{response.Id}");
+                HttpRequestMessage reqMsg = new HttpRequestMessage(HttpMethod.Get, $"{GlobalHelper.TestServer}/api/accounts/users/{response.Id}");
                 ChatAppAuthProvider.Instace.AuthIt(reqMsg.Headers); // Auth request
                 resp = client.SendAsync(reqMsg).Result;
 
-                response = JsonConvert.DeserializeObject<UserAccountViewModel>(resp.Content.ReadAsStringAsync().Result);
+                responseString = resp.Content.ReadAsStringAsync().Result;
+                response = JsonConvert.DeserializeObject<UserAccountViewModel>(responseString);
                 Assert.Equal(HttpStatusCode.OK, resp.StatusCode);
                 Assert.Equal($"UA:{accountName}", response.Id);
                 Assert.Equal(request.DisplayName, response.DisplayName);

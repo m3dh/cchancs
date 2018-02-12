@@ -31,7 +31,7 @@
             HttpContent content = new StringContent(JsonConvert.SerializeObject(request));
             content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
             content.Headers.ContentType.CharSet = "utf-8";
-            HttpResponseMessage resp = HttpClient.PostAsync("http://localhost:8080/api/accounts/users", content).Result;
+            HttpResponseMessage resp = HttpClient.PostAsync($"{GlobalHelper.TestServer}/api/accounts/users", content).Result;
             Assert.Equal(HttpStatusCode.Created, resp.StatusCode);
             UserAccountViewModel response = JsonConvert.DeserializeObject<UserAccountViewModel>(resp.Content.ReadAsStringAsync().Result);
             return response;
@@ -44,7 +44,7 @@
                 Password = Convert.ToBase64String(Encoding.UTF8.GetBytes(password)),
             };
 
-            HttpRequestMessage req = new HttpRequestMessage(new HttpMethod("POST"), $"http://localhost:8080/api/accounts/users/{accountName}/password");
+            HttpRequestMessage req = new HttpRequestMessage(new HttpMethod("POST"), $"{GlobalHelper.TestServer}/api/accounts/users/{accountName}/password");
             req.Content = new StringContent(JsonConvert.SerializeObject(request));
             req.Content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
             req.Content.Headers.ContentType.CharSet = "utf-8";
@@ -61,13 +61,15 @@
                 Password = Convert.ToBase64String(Encoding.UTF8.GetBytes(password)),
             };
 
-            HttpRequestMessage req0 = new HttpRequestMessage(new HttpMethod("POST"), $"http://localhost:8080/api/accounts/users/{accountName}/tokens");
+            HttpRequestMessage req0 = new HttpRequestMessage(new HttpMethod("POST"), $"{GlobalHelper.TestServer}/api/accounts/users/{accountName}/tokens");
             req0.Content = new StringContent(JsonConvert.SerializeObject(request)); // reuse the request
             req0.Content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
             req0.Content.Headers.ContentType.CharSet = "utf-8";
             HttpResponseMessage resp0 = HttpClient.SendAsync(req0).Result;
+
+            var responseString = resp0.Content.ReadAsStringAsync().Result;
             Assert.Equal(HttpStatusCode.Created, resp0.StatusCode);
-            DeviceTokenViewModel token0 = JsonConvert.DeserializeObject<DeviceTokenViewModel>(resp0.Content.ReadAsStringAsync().Result);
+            DeviceTokenViewModel token0 = JsonConvert.DeserializeObject<DeviceTokenViewModel>(responseString);
             return token0;
         }
 
@@ -86,17 +88,17 @@
                 TargetAccountId = secondAccountId,
             };
 
-            return this.Post<GeneralChannelViewModel>("http://localhost:8080/api/channels/dms", request);
+            return this.Post<GeneralChannelViewModel>($"{GlobalHelper.TestServer}/api/channels/dms", request);
         }
 
         public List<GeneralChannelViewModel> ListMyChannels()
         {
-            return this.Get<List<GeneralChannelViewModel>>($"http://localhost:8080/api/channels?accounId={this.AccountId}");
+            return this.Get<List<GeneralChannelViewModel>>($"{GlobalHelper.TestServer}/api/channels?accounId={this.AccountId}");
         }
 
         public GeneralChannelViewModel GetChannel(string channelId)
         {
-            return this.Get<GeneralChannelViewModel>($"http://localhost:8080/api/channels/{channelId}");
+            return this.Get<GeneralChannelViewModel>($"{GlobalHelper.TestServer}/api/channels/{channelId}");
         }
 
         public GeneralMessageViewModel PostNewChannelMessage(string channelId)
@@ -108,17 +110,17 @@
                 Uuid = Guid.NewGuid().ToString("N")
             };
 
-            return this.Post<GeneralMessageViewModel>($"http://localhost:8080/api/channels/{channelId}/textMessages", input);
+            return this.Post<GeneralMessageViewModel>($"{GlobalHelper.TestServer}/api/channels/{channelId}/textMessages", input);
         }
 
         public List<GeneralMessageViewModel> ListMessagesByChannel(string channelId, long lastMsgOrdinalNumber = 0)
         {
-            return this.Get<List<GeneralMessageViewModel>>($"http://localhost:8080/api/channels/{channelId}/messages?lastMsgOrdinalNumber={lastMsgOrdinalNumber}");
+            return this.Get<List<GeneralMessageViewModel>>($"{GlobalHelper.TestServer}/api/channels/{channelId}/messages?lastMsgOrdinalNumber={lastMsgOrdinalNumber}");
         }
 
         public List<ParticipantViewModel> ListMyParticipants(long prevUpdatedDt)
         {
-            return this.Get<List<ParticipantViewModel>>($"http://localhost:8080/api/participants?prevUpdatedDt={prevUpdatedDt}&accountId={this.AccountId}");
+            return this.Get<List<ParticipantViewModel>>($"{GlobalHelper.TestServer}/api/participants?prevUpdatedDt={prevUpdatedDt}&accountId={this.AccountId}");
         }
 
         private TRet Get<TRet>(string url)

@@ -5,6 +5,15 @@
 
     using ChatChan.Common;
     using ChatChan.Controller;
+    using Xunit;
+
+    public static class GlobalHelper
+    {
+        private const string GlobalTestServer = "http://localhost:8080";
+        private const string GlobalAzureDpe = "https://cchanapi0.azurewebsites.net";
+
+        public static readonly string TestServer = GlobalAzureDpe;
+    }
 
     public class ChatAppAuthProvider
     {
@@ -18,7 +27,10 @@
         {
             string accountName = $"auth-account-{(int)(DateTime.UtcNow - new DateTime(1970, 1, 1)).TotalSeconds}";
 
-            UserAccountViewModel response = ChatClient.SetUserAccountPassword(accountName, "CHATCHAN_APP");
+            UserAccountViewModel response = ChatClient.CreateUserAccount(accountName, "Test Account for Auth");
+            Assert.NotNull(response);
+
+            response = ChatClient.SetUserAccountPassword(accountName, "CHATCHAN_APP");
 
             var token0 = ChatClient.LogonAccount(accountName, "CHATCHAN_APP");
 

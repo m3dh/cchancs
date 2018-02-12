@@ -29,14 +29,14 @@ namespace ChatChan.Tests.Functional
                 ByteArrayContent content = new ByteArrayContent(image);
                 content.Headers.ContentType = MediaTypeHeaderValue.Parse("image/jpeg");
                 ChatAppAuthProvider.Instace.AuthIt(content.Headers); // Auth request
-                HttpResponseMessage resp = client.PostAsync("http://localhost:8080/api/images/avatars", content).Result;
+                HttpResponseMessage resp = client.PostAsync($"{GlobalHelper.TestServer}/api/images/avatars", content).Result;
                 Assert.Equal(HttpStatusCode.Created, resp.StatusCode);
                 Dictionary<string, object> result = JsonConvert.DeserializeObject<Dictionary<string, object>>(resp.Content.ReadAsStringAsync().Result);
                 string id = result["image_id"].ToString();
                 Assert.StartsWith("CI:", id);
 
                 // Get the image metadata
-                HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Get, $"http://localhost:8080/api/images/{id}");
+                HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Get, $"{GlobalHelper.TestServer}/api/images/{id}");
                 ChatAppAuthProvider.Instace.AuthIt(request.Headers); // Auth request
                 resp = client.SendAsync(request).Result;
 
@@ -46,7 +46,7 @@ namespace ChatChan.Tests.Functional
                 Assert.Equal(id, respObj.Id);
 
                 // Get the image content...
-                HttpRequestMessage request1 = new HttpRequestMessage(HttpMethod.Get, $"http://localhost:8080/api/images/core/{id}");
+                HttpRequestMessage request1 = new HttpRequestMessage(HttpMethod.Get, $"{GlobalHelper.TestServer}/api/images/core/{id}");
                 ChatAppAuthProvider.Instace.AuthIt(request1.Headers); // Auth request
                 resp = client.SendAsync(request1).Result;
 
