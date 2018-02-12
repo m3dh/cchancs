@@ -152,7 +152,8 @@
 
                 HttpContent content = new StringContent(JsonConvert.SerializeObject(request));
                 content.Headers.ContentType = new MediaTypeHeaderValue("application/json") { CharSet = "utf-8" };
-                HttpResponseMessage resp = client.PostAsync("http://localhost:8080/api/accounts/users", content).Result;
+                HttpResponseMessage resp = client.PostAsync("https://cchanapi0.azurewebsites.net/api/accounts/users", content).Result;
+                var oup = resp.Content.ReadAsStringAsync().Result;
                 Assert.Equal(HttpStatusCode.Created, resp.StatusCode);
                 UserAccountViewModel response = JsonConvert.DeserializeObject<UserAccountViewModel>(resp.Content.ReadAsStringAsync().Result);
                 Assert.Equal($"UA:{accountName}", response.Id);

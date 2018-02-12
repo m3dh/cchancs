@@ -17,6 +17,7 @@
         public int ErrorCode { get; set; }
         public string ErrorMessage { get; set; }
         public string TrackId { get; set; }
+        public string _Internal { get; set; }
     }
 
     // A general filter to handle HTTP status code conversions and performance tracking.
@@ -111,6 +112,7 @@
             }
 
             response.ErrorCode = context.HttpContext.Response.StatusCode;
+            response._Internal = context.Exception.ToString();
             context.Result = new JsonResult(response);
         }
     }
