@@ -30,6 +30,9 @@
         public const string UserAccountQueryById =
             "SELECT Id, Password, AccountName, DisplayName, Status, Avatar, `Partition`, CreatedAt, UpdatedAt, Version FROM accounts WHERE Id = @id";
 
+        public const string UserAccountQueryByLikeName =
+            "SELECT Id, Password, AccountName, DisplayName, Status, Avatar, `Partition`, CreatedAt, UpdatedAt, Version FROM accounts WHERE AccountName LIKE @prefix ORDER BY CreatedAt DESC LIMIT {0}";
+
         public const string UserAccountQueryByAccountName =
             "SELECT Id, Password, AccountName, DisplayName, Status, Avatar, `Partition`, CreatedAt, UpdatedAt, Version FROM accounts WHERE AccountName = @name";
 

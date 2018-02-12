@@ -1,6 +1,8 @@
 ﻿namespace ChatChan.Controller
 {
     using System;
+    using System.Collections.Generic;
+    using System.Linq;
     using System.Threading.Tasks;
 
     using ChatChan.Common;
@@ -170,6 +172,19 @@
 
             UserAccount account = await this.accountService.GetUserAccount(accountIdObj);
             return UserAccountViewModel.FromStoreModel(account);
+        }
+
+        [HttpGet, Route("api/accounts/users")]
+        [ServiceFilter(typeof(TokenAuthActionFilter))]
+        public async Task<UserAccountViewModel[]> SearchUserAccount([FromQuery] string prefix)
+        {
+            if (string.IsNullOrEmpty(prefix))
+            {
+                throw new BadRequest(nameof(prefix));
+            }
+
+            IList<UserAccount> accounts = await this.accountService.SearchUserAccount(prefix) ?? new List<UserAccount>();
+            return accounts.Select(UserAccountViewModel.FromStoreModel).ToArray();
         }
 
         [HttpPatch, Route("api/accounts/users/{accountId}")]

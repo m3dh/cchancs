@@ -2,6 +2,7 @@
 {
     using System;
     using System.Collections.Generic;
+    using System.Linq;
     using System.Threading;
     using ChatChan.Controller;
     using Xunit;
@@ -28,6 +29,9 @@
             Assert.False(string.IsNullOrEmpty(token1.Token));
 
             this.firstChatClient = new ChatClient(account.Id, token1);
+            var accounts = this.firstChatClient.SearchUserAccount(accountName.Substring(0, 9));
+            Assert.True(accounts.Count <= 10);
+            Assert.Contains(accounts, a =>a.Id.Equals("UA:" + accountName, StringComparison.Ordinal));
 
             // Create second account
             string secondAccountName = $"MsgTestSec{DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}";

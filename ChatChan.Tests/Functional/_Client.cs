@@ -80,6 +80,11 @@
             this.token = token.Token;
         }
 
+        public List<UserAccountViewModel> SearchUserAccount(string prefix)
+        {
+            return this.Get<List<UserAccountViewModel>>($"{GlobalHelper.TestServer}/api/accounts/users?prefix={prefix}");
+        }
+
         public GeneralChannelViewModel CreateDirectMessageChannel(string secondAccountId)
         {
             DirectMessageChannelInputModel request = new DirectMessageChannelInputModel

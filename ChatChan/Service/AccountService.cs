@@ -26,6 +26,7 @@
 
         Task<AccountId> CreateUserAccount(string accountName, string displayName);
         Task<UserAccount> GetUserAccount(AccountId accountId);
+        Task<IList<UserAccount>> SearchUserAccount(string prefix);
         Task<UserAccount> UpdateUserAccount(AccountId accountId, string password);
         Task<UserAccount> UpdateUserAccount(AccountId accountId, string displayName, string avatarImageId);
 
@@ -139,6 +140,18 @@
             }
 
             return account;
+        }
+
+        public async Task<IList<UserAccount>> SearchUserAccount(string prefix)
+        {
+            if (string.IsNullOrEmpty(prefix) || prefix.Length <= 3)
+            {
+                throw new BadRequest("Shall provide at least 3 characters when searching.");
+            }
+
+            string queryPrefix = $"{prefix}%";
+            string query = string.Format(AccountQueries.UserAccountQueryByLikeName, this.serviceLimits.MaxReturnedSearchItemsInQuery);
+            return await this.coreDb.QueryAll<UserAccount>(query, new Dictionary<string, object> { { "@prefix", queryPrefix } });
         }
 
         public async Task<UserAccount> UpdateUserAccount(AccountId accountId, string password)

@@ -12,7 +12,7 @@
         private const string GlobalTestServer = "http://localhost:8080";
         private const string GlobalAzureDpe = "https://cchanapi0.azurewebsites.net";
 
-        public static readonly string TestServer = GlobalAzureDpe;
+        public static readonly string TestServer = GlobalTestServer;
     }
 
     public class ChatAppAuthProvider
