@@ -81,6 +81,12 @@
             this.accountService = accountService ?? throw new ArgumentNullException(nameof(accountService));
         }
 
+        [HttpGet, Route("api/accounts/count")]
+        public async Task<int> CountAllAccounts()
+        {
+            return await this.accountService.CountUserAccount();
+        }
+
         [HttpPost, Route("api/accounts/users")]
         public async Task<UserAccountViewModel> CreateUserAccount([FromBody] UserAccountInputModel inputAccount)
         {

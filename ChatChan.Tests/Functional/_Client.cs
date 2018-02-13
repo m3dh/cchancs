@@ -32,8 +32,9 @@
             content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
             content.Headers.ContentType.CharSet = "utf-8";
             HttpResponseMessage resp = HttpClient.PostAsync($"{GlobalHelper.TestServer}/api/accounts/users", content).Result;
+            string respString = resp.Content.ReadAsStringAsync().Result;
             Assert.Equal(HttpStatusCode.Created, resp.StatusCode);
-            UserAccountViewModel response = JsonConvert.DeserializeObject<UserAccountViewModel>(resp.Content.ReadAsStringAsync().Result);
+            UserAccountViewModel response = JsonConvert.DeserializeObject<UserAccountViewModel>(respString);
             return response;
         }
 
