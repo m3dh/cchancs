@@ -21,8 +21,10 @@
 
     public class CoreDbProvider : MySqlExecutor
     {
-        public CoreDbProvider(ILoggerFactory loggerFactory, IOptions<StorageSection> storageSection)
-            : base(storageSection?.Value?.CoreDatabase ?? throw new ArgumentNullException(nameof(storageSection)), loggerFactory)
+        public CoreDbProvider(ILoggerFactory loggerFactory, IOptions<StorageSection> storageSection, IOptions<StringsSection> stringsSection)
+            : base(storageSection?.Value?.CoreDatabase ?? throw new ArgumentNullException(nameof(storageSection)),
+                stringsSection?.Value ?? throw new ArgumentNullException(nameof(stringsSection)),
+                loggerFactory)
         {
         }
     }
@@ -32,11 +34,16 @@
         private readonly IMessageQueue innerQueue;
         private static readonly Dictionary<string, TaskCompletionSource<bool>> LocalReadiness = new Dictionary<string, TaskCompletionSource<bool>>();
 
-        public MessageQueueProvider(CoreDbProvider coreDb, ILoggerFactory loggerFactory, IOptions<StorageSection> storageSection)
+        public MessageQueueProvider(CoreDbProvider coreDb, ILoggerFactory loggerFactory, IOptions<StorageSection> storageSection, IOptions<StringsSection> stringsSection)
         {
             if (storageSection?.Value == null)
             {
                 throw new ArgumentNullException(nameof(storageSection));
+            }
+
+            if(stringsSection?.Value == null)
+            {
+                throw new ArgumentNullException(nameof(stringsSection));
             }
 
             if (string.Equals(Constants.StorageDeployModeAllInOne, storageSection.Value.DeployMode, StringComparison.OrdinalIgnoreCase))

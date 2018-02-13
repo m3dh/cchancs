@@ -40,8 +40,8 @@
         {
             ILoggerFactory loggerFactory = Mocks.GetLoggerFactory();
             IOptions<StorageSection> storageSection = Mocks.GetStorageSection();
-            CoreDbProvider coreDbProvider = new CoreDbProvider(loggerFactory, storageSection);
-            MessageQueueProvider queue = new MessageQueueProvider(coreDbProvider, loggerFactory, storageSection);
+            CoreDbProvider coreDbProvider = new CoreDbProvider(loggerFactory, storageSection, new OptionsWrapper<StringsSection>(new StringsSection()));
+            MessageQueueProvider queue = new MessageQueueProvider(coreDbProvider, loggerFactory, storageSection, new OptionsWrapper<StringsSection>(new StringsSection()));
             return queue;
         }
     }

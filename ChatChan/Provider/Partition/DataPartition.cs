@@ -15,12 +15,13 @@
         private readonly Random randomer = new Random(DateTimeOffset.UtcNow.Millisecond);
         private readonly IList<Lazy<MySqlExecutor>> partitionExecutors;
 
-        public DataPartitionsManager(IOptions<StorageSection> storageSection, ILoggerFactory loggerFactory)
+        public DataPartitionsManager(IOptions<StorageSection> storageSection, IOptions<StringsSection> stringsSection, ILoggerFactory loggerFactory)
         {
             this.storageSection = storageSection?.Value ?? throw new ArgumentNullException(nameof(storageSection));
+            StringsSection strings = stringsSection?.Value ?? throw new ArgumentNullException(nameof(stringsSection));
             this.partitionExecutors = new Lazy<MySqlExecutor>[this.storageSection.PartitionCount];
 
-            Lazy<MySqlExecutor> coreDatabase = new Lazy<MySqlExecutor>(() => new MySqlExecutor(this.storageSection.CoreDatabase, loggerFactory));
+            Lazy<MySqlExecutor> coreDatabase = new Lazy<MySqlExecutor>(() => new MySqlExecutor(this.storageSection.CoreDatabase, strings, loggerFactory));
             if (this.storageSection.CoreDatabase.PartitionKeys != null)
             {
                 foreach (int partition in this.storageSection.CoreDatabase.PartitionKeys)
@@ -43,7 +44,7 @@
             {
                 foreach (MySqlDbSection partitionSection in this.storageSection.DataDatabases)
                 {
-                    Lazy<MySqlExecutor> dataDatabase = new Lazy<MySqlExecutor>(() => new MySqlExecutor(partitionSection, loggerFactory));
+                    Lazy<MySqlExecutor> dataDatabase = new Lazy<MySqlExecutor>(() => new MySqlExecutor(partitionSection, strings, loggerFactory));
                     partitionSection.PartitionKeys.ForEach(k =>
                     {
                         if (k > this.storageSection.PartitionCount)

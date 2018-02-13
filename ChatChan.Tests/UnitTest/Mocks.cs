@@ -82,8 +82,8 @@
             ILoggerFactory loggerFactory = Mocks.GetLoggerFactory();
             IOptions<StorageSection> storageSection = Mocks.GetStorageSection();
             IOptions<LimitationsSection> limitationSection = Mocks.GetLimitationSection();
-            IDataPartitionProvider partitionProvider = new DataPartitionsManager(storageSection, loggerFactory);
-            CoreDbProvider coreDbProvider = new CoreDbProvider(loggerFactory, storageSection);
+            IDataPartitionProvider partitionProvider = new DataPartitionsManager(storageSection, new OptionsWrapper<StringsSection>(new StringsSection()), loggerFactory);
+            CoreDbProvider coreDbProvider = new CoreDbProvider(loggerFactory, storageSection, new OptionsWrapper<StringsSection>(new StringsSection()));
             IAccountService accountService = new AccountService(loggerFactory, coreDbProvider, Substitute.For<ITokenService>(), partitionProvider, limitationSection);
             return accountService.CreateUserAccount("Acct-" + (AccountCnt++).ToString("D3") + Guid.NewGuid().ToString("N").Substring(19), "Account for participant service tests.").Result;
         }

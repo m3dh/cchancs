@@ -73,8 +73,8 @@
         {
             ILoggerFactory loggerFactory = Mocks.GetLoggerFactory();
             IOptions<StorageSection> storageSection = Mocks.GetStorageSection();
-            IDataPartitionProvider partitionProvider = new DataPartitionsManager(storageSection, loggerFactory);
-            CoreDbProvider coreDbProvider = new CoreDbProvider(loggerFactory, storageSection);
+            IDataPartitionProvider partitionProvider = new DataPartitionsManager(storageSection, new OptionsWrapper<StringsSection>(new StringsSection()), loggerFactory);
+            CoreDbProvider coreDbProvider = new CoreDbProvider(loggerFactory, storageSection, new OptionsWrapper<StringsSection>(new StringsSection()));
             IChannelService channelService = new ChannelService(loggerFactory, coreDbProvider, partitionProvider);
             IMessageService svc = new MessageService(loggerFactory, channelService, partitionProvider);
             return svc;

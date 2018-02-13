@@ -63,6 +63,7 @@
             serviceCollection
                 .Configure<StorageSection>(configuration.GetSection("Storage"))
                 .Configure<LimitationsSection>(configuration.GetSection("Limitations"))
+                .Configure<StringsSection>(configuration.GetSection("Strings"))
 
                 // Providers
                 .AddSingleton<CoreDbProvider>()

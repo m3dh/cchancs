@@ -46,16 +46,21 @@
         private readonly string connectionString;
         private readonly ILogger logger;
 
-        public MySqlExecutor(MySqlDbSection mysqlSettings, ILoggerFactory loggerFactory)
-            : this(mysqlSettings.Mode, mysqlSettings.Server, mysqlSettings.Port, mysqlSettings.Uid, mysqlSettings.Password, mysqlSettings.DbName, loggerFactory)
+        public MySqlExecutor(MySqlDbSection mysqlSettings, Dictionary<string, string> strings, ILoggerFactory loggerFactory)
+            : this(strings, mysqlSettings.Mode, mysqlSettings.Server, mysqlSettings.Port, mysqlSettings.Uid, mysqlSettings.Password, mysqlSettings.DbName, loggerFactory)
         {
         }
 
-        public MySqlExecutor(string mode, string serverHost, uint port, string userId, string password, string dbName, ILoggerFactory loggerFactory)
+        public MySqlExecutor(Dictionary<string, string> strings, string mode, string serverHost, uint port, string userId, string password, string dbName, ILoggerFactory loggerFactory)
         {
             if (SupportedSqlModes.All(m => !string.Equals(m, mode, StringComparison.OrdinalIgnoreCase)))
             {
                 throw new ArgumentException($"Unexpected SQL mode {mode}", nameof(mode));
+            }
+
+            if (serverHost.StartsWith("_"))
+            {
+                serverHost = strings[serverHost];
             }
 
             MySqlConnectionStringBuilder connectionStringBuilder = new MySqlConnectionStringBuilder
