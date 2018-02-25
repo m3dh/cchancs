@@ -163,7 +163,6 @@
         }
 
         [HttpGet, Route("api/accounts/users/{accountId}")]
-        [ServiceFilter(typeof(TokenAuthActionFilter))]
         public async Task<UserAccountViewModel> GetUserAccount(string accountId)
         {
             if (string.IsNullOrEmpty(accountId))

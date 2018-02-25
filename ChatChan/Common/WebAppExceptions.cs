@@ -37,14 +37,15 @@
     {
         public enum Code
         {
-            Duplication = 0,
-            RaceCondition = 1,
+            Duplication = 40900,
+            RaceCondition = 40901,
         }
 
         public Code ErrorCode { get; set; }
 
         public Conflict(Code code, string message) : base(message)
         {
+            this.ErrorCode = code;
         }
     }
 

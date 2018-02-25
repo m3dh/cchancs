@@ -12,11 +12,20 @@
     using Microsoft.AspNetCore.Mvc.Filters;
     using Microsoft.Extensions.Logging;
 
+    using Newtonsoft.Json;
+
     public class ErrorResponse
     {
+        [JsonProperty(PropertyName = "error_code")]
         public int ErrorCode { get; set; }
+
+        [JsonProperty(PropertyName = "error_message")]
         public string ErrorMessage { get; set; }
+
+        [JsonProperty(PropertyName = "_track_id")]
         public string TrackId { get; set; }
+
+        [JsonProperty(PropertyName = "_internal")]
         public string _Internal { get; set; }
     }
 
@@ -59,8 +68,11 @@
             ErrorResponse response = new ErrorResponse
             {
                 TrackId = context.HttpContext.TraceIdentifier,
+                ErrorCode = context.HttpContext.Response.StatusCode,
+                _Internal = context.Exception.ToString()
             };
 
+            this.logger.LogDebug($"Error: {response._Internal}");
             if (context.Exception is BadRequest)
             {
                 context.HttpContext.Response.StatusCode = (int)HttpStatusCode.BadRequest;
@@ -111,8 +123,6 @@
                 this.logger.LogWarning("Unhandled exception : {0} : {1}", context.Exception.GetType().Name, context.Exception);
             }
 
-            response.ErrorCode = context.HttpContext.Response.StatusCode;
-            response._Internal = context.Exception.ToString();
             context.Result = new JsonResult(response);
         }
     }
