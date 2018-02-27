@@ -123,6 +123,10 @@
                 this.logger.LogWarning("Unhandled exception : {0} : {1}", context.Exception.GetType().Name, context.Exception);
             }
 
+            if(response.ErrorCode <= 300 && context.HttpContext.Response.StatusCode != response.ErrorCode) {
+                response.ErrorCode = context.HttpContext.Response.StatusCode;
+            }
+
             context.Result = new JsonResult(response);
         }
     }
