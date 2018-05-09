@@ -52,6 +52,9 @@
         [JsonProperty(PropertyName = "ordinal")]
         public long OrdinalNumber { get; set; }
 
+        [JsonProperty(PropertyName = "uuid")]
+        public string MessageUuid { get; set; }
+
         [JsonProperty(PropertyName = "sender_id")]
         public string SenderAccountId { get; set; }
     }
@@ -210,6 +213,7 @@
                     MessageBody = m.MessageBody,
                     SenderAccountId = m.SenderAccountId.ToString(),
                     OrdinalNumber = m.OrdinalNumber,
+                    MessageUuid = m.Uuid,
                 })
                 .ToArray();
         }
@@ -265,6 +269,7 @@
                 MessageBody = msg.MessageBody,
                 SenderAccountId = msg.SenderAccountId.ToString(),
                 OrdinalNumber = msg.OrdinalNumber,
+                MessageUuid = msg.Uuid,
             };
         }
     }
